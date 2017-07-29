@@ -1,0 +1,151 @@
+
+
+
+                             T E P A P A
+
+          A Text mining-based  Exploratory Pattern Analyser
+           for Prognostic and Associative factor discovery
+
+                            (Version 0.9)
+
+
+      Frank Lin *, MB ChB PhD <f dot lin at garvan dot org dot au>
+
+
+* Department of Medical Oncology, St Vincent's Hospital, Sydney & 
+  The Kinghorn Cancer Centre
+  Darlinghurst, NSW 2010, Australia
+
+* Garvan Institute of Medical Research, Darlinghurst, NSW 2010, Australia
+
+
+
+=============================================================================
+Copyright (C) 2015-2016, Frank Lin - All Rights Reserved
+
+Written by Frank P.Y. Lin <f dot lin at garvan dot org dot au>
+
+This file is part of TEPAPA, a Text mining-based Exploratory Pattern Analyser
+for Prognostic and Associative factor discovery.
+
+TEPAPA is free software: you can redistribute it  and/or  modify it under the
+terms  of the GNU  General Public License  as published  by the Free Software
+Foundation,  either version 3 of the License,  or (at your option)  any later
+version.
+
+TEPAPA  is distributed  in the hope that  it will be useful,  but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should  have received a copy of the GNU General Public License along with
+TEPAPA.  If not, see <http://www.gnu.org/licenses/>
+=============================================================================
+
+
+1. Overview
+===========
+
+TEPAPA  is a  feature  learning  pipeline  that  learns  differentiating  text
+patterns associated with outcomes of interest (i.e. supervised) from examples.
+It is  specifically designed  to learn  new knowledge  from electronic medical
+records (EMR) to find text patterns associated a numeric  and binary variables
+of interest (and hopefully explanatory with biological plausibility!).
+
+TEPAPA combines the following methods  to discover text patterns that differen-
+tiate the outcome variables from EMR text:
+
+  * Semantic-free (i.e. shallow) Natural Language Processing (NLP) methods.
+  * Sequence-based feature search methods.
+    - Simple n-gram search
+    - Combinatorial (deep) search
+  * Statistical association testing.
+  * Predictive regular expression induction methods
+  * Feature filtering tools
+  * Feature ranking tools.
+
+TEPAPA is also designed to be extensible.  The preprocessing modules and can be 
+replaced by dedicated  and/or more sophiscated tools for preprocessing.  TEPAPA
+may also find discriminative text patterns to help machine learning-based pheno-
+typing methods for case classification.
+  
+Please see the associated publications for detailed discussions [1].
+
+
+2. Building TEPAPA
+==================
+Source tree directory structure:
+  src/                           - Source code directory
+  src/Makefile                   - Makefile of the TEPAPA binary
+  bin/                           - output directory for the binary
+  scripts/         
+  scripts/prep-*                 - Scripts for preprocessing
+  scripts/tepapa-pl-simple.tpp   - Example script for TEPAPA-based discovery
+
+
+Compilation requirements:
+  * GNU make
+  * gcc (version 5) - must support C++11
+  * libc++ 
+  * The following external libraries are needed:
+     - libgsl             GNU scientific library
+     - libgslcblas        GNU scientific library, BLAS (Basic Linear Algebra 
+                          Subprograms)
+     - libpthread         GNU POSIX threading Library
+  * Perl5
+  * The following Perl5 modules (downloadable from CPAN) are required at 
+    compile time:
+     - ExtUtils::Embed    for embedding Perl in C/C++ applications)
+
+
+Then run:
+
+   cd src; make
+
+
+     
+3. Running TEPAPA
+=================
+System requirements:
+  * An UNIX-like system (e.g. GNU/Linux).
+  * Multiple  processors  will  be  used  in the  pattern  search  and  regular 
+    expression induction.
+  * Depending on the size of corpus / depth of search, a minimum  of 4GB RAM is 
+	  recommended (>16GB is recommended for general use.
+  * Computation time is linear to the size of corpus.
+
+Run-time requirements:
+  * Perl5 is  used by  the default  text cleaner (prep-CLEAN.pl)  and tokenizer 
+    (prep-TOKENISE.pl).
+  * Lingua::Stem::En   is   required   for   word   stemming /  tokenization by 
+    prep-TOKENISE.pl (the default tokeniser), available at 
+    http://search.cpan.org/dist/Lingua-Stem/lib/Lingua/Stem/En.pm
+
+To run TEPAPA, you need:
+  * A list of  cases with  known variable  of interest  (e.g.  risk factors  or 
+    patient survival).
+  * EMR narratives associated with each case.
+  * Compile a case file (see scripts/tepapa-pl-simple.tpp for format).
+  * A pipeline script (see scripts/epapa-pl-simple.tpp) for execution.
+
+
+
+
+References:
+
+1.  Lin F,  Pokorny A,  Teng C,  Epstein RJ.  TEPAPA: a novel  in silico  feature 
+    learning  pipeline for  mining prognostic and associative factors  from text-
+    based electronic medical records (Under review).
+
+2.  Lin F  and  Epstein RJ.  An  associative  text-mining  pipeline   rediscovers
+    clinicopathologic  factors  correlated  to  adjuvant  chemotherapy recommend-
+    ations from a structured, uncleaned breast cancer database. Presented  at the
+    Sydney  Bioinformatics  Research  Symposium 2016,  Charles  Perkins  Centre,
+    University of Sydney. July 2016
+    
+3.  Lin F and and Epstein RJ. Rapid in silico identification of cancer prognostic
+    factors  from the electronic medical records:  a case study  of upper gastro-
+    intestinal (UGI)  cancers  multidisciplinary (MDT) meeting reports  (Poster).
+    Presented  at the  Sydney Cancer Conference,  22--23 September 2016.
+
+
+Last updated: 2 November 2016

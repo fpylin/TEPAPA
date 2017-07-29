@@ -1,0 +1,33 @@
+/* 
+ * Copyright (C) 2015-2016, Frank Lin - All Rights Reserved
+ * Written by Frank P.Y. Lin 
+ *
+ * This file is part of TEPAPA, a Text mining-based Exploratory Pattern
+ * Analyser for Prognostic and Associative factor discovery
+ * 
+ * TEPAPA is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * TEPAPA is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with TEPAPA.  If not, see <http://www.gnu.org/licenses/>
+ */
+#ifndef __pipe_h
+#define __pipe_h 1
+
+
+#include <string>
+#include <vector>
+
+using namespace std;
+
+string pipe_command (const string& progname, const string& data) ;
+string pipe_command (const string& progname, const vector<string>& p_argv, const string& data);
+
+#endif // __pipe_h
