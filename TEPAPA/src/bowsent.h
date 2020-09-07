@@ -95,7 +95,9 @@ class bag_of_words_sentence_pattern: public pattern, public bag_of_words_sentenc
 	
 	bag_of_words_sentence_pattern(const bag_of_words_sentence& rs): 
 		pattern(), bag_of_words_sentence(rs) { set_type_id(); }
-	
+
+	virtual pattern* clone() const { return new bag_of_words_sentence_pattern(*this); }
+		
 	virtual ~bag_of_words_sentence_pattern() {}
 	virtual string to_string(const string& delim="  ") const { return bag_of_words_sentence::to_string(delim); }
 	

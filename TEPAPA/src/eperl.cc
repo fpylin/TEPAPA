@@ -32,11 +32,14 @@ EmbeddedPerl::EmbeddedPerl(bool f_embed) {
 		}
 	++ use_count ; 
 	if (f_embed) {
-		char *embedding[] = { "", "-e", "0" };
-		perl_parse(my_perl, NULL, 3, embedding, NULL);
-		perl_run(my_perl);
-		}
+	  char embedding[3][1024];
+	  strcpy(embedding[0], "");
+	  strcpy(embedding[1], "-e");
+	  strcpy(embedding[2], "0");
+	  perl_parse(my_perl, NULL, 3, (char**)embedding, NULL);
+	  perl_run(my_perl);
 	}
+}
 
 EmbeddedPerl::~EmbeddedPerl() { 
 	-- use_count ; 

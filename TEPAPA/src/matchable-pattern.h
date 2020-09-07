@@ -25,28 +25,67 @@
 #include "token.h"
 #include "samples.h"
 
+using namespace std;
+
+struct matching_range {
+  size_t  from; //
+  size_t  to;   // exclusive
+  
+  matching_range() {}
+  matching_range(const token_string& ts) ;
+  matching_range(const token_string& ts, const token_string::iterator ifrom) ;
+  matching_range(const token_string& ts, const token_string::const_iterator ifrom) ;
+  matching_range(const token_string& ts, const token_string::const_iterator ifrom, const token_string::const_iterator ito) ;
+  matching_range(size_t pfrom, size_t pto) { from=pfrom; to=pto; }
+};
+
+
+typedef vector<matching_range>  matching_range_list;
+
+typedef pair<token_string::const_iterator, token_string::const_iterator>  matched_pos; // result of "find" function (matched position)
+
+
 class matchable_pattern: virtual public pattern {
-	public:
-	matchable_pattern(): pattern () { }
-	
-	virtual ~matchable_pattern() {}
-	
-	virtual token_string::const_iterator find(const token_string&  ts, token_string::const_iterator  start) const =0;
-	
-	virtual token_string::const_iterator find(const token_string&  ts) const ;
-	
-	virtual vector<int> find_all(const token_string&  ts) const ;
-	
-	virtual bool match(const token_string&  ts) const ;
-	
-	virtual binary_profile match(const sample_list& sl) const ;
-	
-	virtual binary_profile match(const sample_list& sl, const binary_profile& search_mask) const ;
-	
-	virtual bool has_subpat(const matchable_pattern& ssp) const { return false; }
-	
-	virtual double atfidf(const sample_list& sl) const { return 0.0; }
-	};
+ public:
+ matchable_pattern(): pattern () { }
+  
+  virtual ~matchable_pattern() {}
+  
+  // finding the pattern within token string ts from "start" to "end"
+  virtual matched_pos find(const token_string&  ts, const matching_range& r) const =0;
+  
+  // finding the pattern within token string ts from "ts.start" to "ts.end"
+  virtual matched_pos find(const token_string&  ts) const ;
+  
+  // finding all pattersn from within matching range
+  virtual vector<size_t> find_all(const token_string&  ts, const matching_range& r) const ;
+  
+  // finding all pattersn from token_string
+  virtual vector<size_t> find_all(const token_string&  ts) const ;
+  
+  // matching
+  virtual bool match(const token_string&  ts, const matching_range& r) const ;
+  
+  // matching (whole token string)
+  virtual bool match(const token_string&  ts) const ;
+
+  virtual pattern* clone() const = 0;
+  
+  // matching (whole token string)
+  virtual binary_profile match(const sample_list& sl) const ;
+
+  // matching (whole token string)
+  virtual binary_profile match(const sample_list& sl, const matching_range_list& rl) const ;
+  
+  virtual binary_profile match(const sample_list& sl, const binary_profile& search_mask) const ;
+
+  virtual binary_profile match(const sample_list& sl, const binary_profile& search_mask, const matching_range_list& rl) const ;
+
+  
+  virtual bool has_subpat(const matchable_pattern& ssp) const { return false; }
+  
+  virtual double atfidf(const sample_list& sl) const { return 0.0; }
+};
 
 
 #endif // __matchable_pattern_h  1

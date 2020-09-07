@@ -25,20 +25,20 @@
 
 #include "tepapa-gvar.h"
 #include "tepapa-results.h"
+#include "tepapa-discoverer.h"
 #include "tepapa-program.h"
 #include "tepapa-evaluator.h"
 
+#define TEPAPA_ARGSTR_DISCOVERER_META_PATTERN_DEPTH  "-r"
+
 struct MPL_retval_struct {
-	meta_pattern*   mp;
-	binary_profile  bprof_out;
-	MPL_retval_struct(){ mp = 0; }
+	iptr<meta_pattern>   mp;
+	binary_profile       bprof_out;
 	};
 
-class TEPAPA_Program_Meta_Pattern_Learner: public TEPAPA_Program {
-	iptr<TEPAPA_Evaluator>  evaluator;
+class TEPAPA_Discoverer_MetaPattern: public TEPAPA_Discoverer {
 	
 	int depth;
-	bool f_gen_by_cooc_sig;
 	
 	MPL_retval_struct MPL_AND(const TEPAPA_Result& r1, const TEPAPA_Result& r2);
 	MPL_retval_struct MPL_OR(const TEPAPA_Result& r1, const TEPAPA_Result& r2);
@@ -47,26 +47,34 @@ class TEPAPA_Program_Meta_Pattern_Learner: public TEPAPA_Program {
 	
 	bool do_evaluate(MPL_retval_struct& pat_match, const vector<double>& v_score, bool f_is_binary);
 
-	int gen_meta_pattern_by_cooccurrence_signature(TEPAPA_Results& rr_out, const TEPAPA_Results& rr);
-	
 	protected:
 
-	bool f_is_binary ;
-	vector<double>  v_score;
-	vector<string> fmts;
+	virtual bool is_meta_learner() const { return true; }
 	
 	void set_v_score(const sample_list& sl);
 	
 	bool do_evaluate(const MPL_retval_struct& pat_match) ;
 
 	public:
-	TEPAPA_Program_Meta_Pattern_Learner();
+	TEPAPA_Discoverer_MetaPattern(VariableList& param): TEPAPA_Discoverer(param) {
+		depth = param[TEPAPA_ARGSTR_DISCOVERER_META_PATTERN_DEPTH];
+		}
 
-	virtual bool handle_argv(const vector<string>& argv) ;
-
-	virtual int run(TEPAPA_dataset&  ds_input, TEPAPA_Results&  rr_output) ;
-	virtual TEPAPA_Program* spawn() const { return new TEPAPA_Program_Meta_Pattern_Learner; }
-	
+	virtual void run1(int) { printf("run1\n"); }
+	virtual bool run1_meta(const sample_list& sl, const TEPAPA_Results& rr_input);
+	bool gen_MPL_AND_recursive(const TEPAPA_Results& rr, const vector<unsigned int>& v, const vector<bool>& v_neg, const binary_profile& bprof, unsigned int limit, unsigned int delta) ;
+	bool gen_MPL_FOLLOW_recursive(const sample_list& sl, const TEPAPA_Results& rr, const vector<unsigned int>& v, const vector<size_t>& sli, const binary_profile& bprof, unsigned int limit);
+	  
 	};
+
+
+class TEPAPA_Program_Discoverer_MetaPattern: public TEPAPA_Program_Discoverer<TEPAPA_Discoverer_MetaPattern> {
+	public:
+	TEPAPA_Program_Discoverer_MetaPattern();
+	virtual TEPAPA_Program* spawn() const { return new TEPAPA_Program_Discoverer_MetaPattern; }
+	};
+
+
+
 
 #endif // __tepapa_meta_h 

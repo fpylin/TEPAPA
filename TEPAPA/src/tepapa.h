@@ -22,7 +22,7 @@
 #ifndef __tepapa_h
 #define __tepapa_h 1
 
-#define VERSION_STRING      "0.9" 
+#define VERSION_STRING      "0.99" 
 
 #include "hashtable.h"
 #include "stopwatch.h"

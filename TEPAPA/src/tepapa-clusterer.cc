@@ -91,7 +91,7 @@ TEPAPA_Program_Clusterer::TEPAPA_Program_Clusterer()
 		); 
 	
 	options_optarg.push_back( 
-		TEPAPA_option_optarg ("-h", "--heatmap", "", 'b', &heatmap_filename)
+		TEPAPA_option_optarg ("-h", "--heatmap", "", 's', &heatmap_filename)
 		); 
 	
 	}

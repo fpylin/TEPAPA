@@ -53,21 +53,21 @@ TEPAPA_Discoverer::TEPAPA_Discoverer(VariableList& param_ref) {
 	}
 
 
-void TEPAPA_Discoverer::set_sample_list(sample_list& sl_ref) { 
+void TEPAPA_Discoverer::set_sample_list(const sample_list& sl_ref) { 
 	sl_ptr = &sl_ref;
 	
-	sample_list& sl = *sl_ptr;
+	const sample_list& sl = *sl_ptr;
 	
-	v_score.clear();
-	
-	for(unsigned int i=0; i<sl.size(); ++i)  v_score.push_back(sl[i].score);
+	v_score = sl.get_scores(); 
+	v_censored = sl.get_censored();       
 	}
 
 
 bool TEPAPA_Discoverer::run() {
-	sample_list& sl = *sl_ptr;
+	const sample_list& sl = *sl_ptr;
+	VariableList& param = *(p_param);
 
-	evaluator= new TEPAPA_Evaluator( sl.is_outvar_binary() );
+	evaluator= new TEPAPA_Evaluator( sl );
 	
 	stopwatch  sw;
 	
@@ -77,8 +77,13 @@ bool TEPAPA_Discoverer::run() {
 	
 	total_cnt_cls  = 0;
 
-	VariableList& param = *(p_param);
 	bool f_positive_only = int( param[TEPAPA_ARGSTR_DISCOVERER_POSITIVE_ONLY] );
+	bool f_use_lrp = int( param[TEPAPA_ARGSTR_DISCOVERER_USE_LIKELIHOOD_RATIO] );
+	min_support = int( param[TEPAPA_ARGSTR_DISCOVERER_MIN_SUPPORT] );
+
+	msgf(VL_NOTICE, "min_support = %d cases\n", min_support);
+	
+	evaluator->set_use_lrp(f_use_lrp);
 
 	
 #if TEPAPA_MULTITHREAD 
@@ -88,7 +93,7 @@ bool TEPAPA_Discoverer::run() {
 	for(unsigned long int i=0; i<sl.size(); ++i) {
 		double f_completed = ( double(i) + 0.5 ) / double(sl.size()) * 100;
 // 		double time_rem_sec = sw.eta_sec( f_completed );
-		if ( sl.is_outvar_binary() && f_positive_only && v_score[i] <= 0 ) continue;
+		if ( sl.is_outvar_binary() && f_positive_only && v_score[i] == 0 ) continue;
 			
 		msgf(VL_NOTICE, "Sample %4lu/%4lu  [%8.3f sec]  (%4.1f%% %8lu results) %.6f %s\n", 
 			i+1, sl.size(), evaluator->get_results().size(), sw.elapsed_sec(), f_completed,
@@ -118,10 +123,20 @@ bool TEPAPA_Discoverer::run() {
 ///////////////////////////////////////////////////////////
 
 bool TEPAPA_Discoverer::run(TEPAPA_Results&  rr) {  // meta learner
-	sample_list& sl = *sl_ptr;
+	const sample_list& sl = *sl_ptr;
+
+	VariableList& param = *(p_param);
 	
-	evaluator= new TEPAPA_Evaluator( sl.is_outvar_binary() );
+	evaluator= new TEPAPA_Evaluator( sl );
 	
+	bool f_positive_only = int( param[TEPAPA_ARGSTR_DISCOVERER_POSITIVE_ONLY] );
+	bool f_use_lrp = int( param[TEPAPA_ARGSTR_DISCOVERER_USE_LIKELIHOOD_RATIO] );
+	min_support = int( param[TEPAPA_ARGSTR_DISCOVERER_MIN_SUPPORT] );
+
+	printf("min_support = %d results\n", min_support);
+	
+	evaluator->set_use_lrp(f_use_lrp);
+
 	stopwatch  sw;
 	
 	sw.start();

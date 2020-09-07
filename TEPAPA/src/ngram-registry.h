@@ -63,7 +63,7 @@ template <typename T> class hash_registry: public hash_assoc_array<T> {
 
 #if TEPAPA_MULTITHREAD
 
-	std::mutex hash_registry_grab_mutex; 
+	static std::mutex hash_registry_grab_mutex; 
 	set<hash_value>   hv_processing;
 
 	bool grab(hash_value hv) {
@@ -104,6 +104,7 @@ template <typename T> class hash_registry: public hash_assoc_array<T> {
 
 typedef hash_registry<ngram_pattern_stats>  ngram_registry;
 typedef hash_registry<hash_registry_struct> simple_hash_registry;
+template <typename T> std::mutex hash_registry<T>::hash_registry_grab_mutex; 
 
 
 

@@ -32,6 +32,8 @@ template <class RETVAL_TYPE> class evaluable_pattern: virtual public pattern {
 	virtual ~evaluable_pattern() {}
 	
 	virtual bool is_invalid(RETVAL_TYPE v) const =0;
+
+	virtual pattern* clone() const =0;
 	
 	virtual RETVAL_TYPE eval(const token_string&  ts) const =0;
 	

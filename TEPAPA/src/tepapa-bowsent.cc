@@ -135,7 +135,7 @@ void TEPAPA_Discoverer_BOWSentence::eval(const vector< vector<bag_of_words_sente
 
 	
 bool TEPAPA_Discoverer_BOWSentence::run() {
-	sample_list& sl = *sl_ptr;
+	const sample_list& sl = *sl_ptr;
 	
 	vector< vector<bag_of_words_sentence> >  vvrs ;
 

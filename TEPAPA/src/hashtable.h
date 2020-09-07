@@ -65,7 +65,7 @@ class hash_table {
 #endif
 		return table[hv].c_str(); 
 		}
-	const char* operator[](hash_value hv)  {
+	const char* operator[](hash_value hv) {
 		return lookup(hv);
 		}
 	hash_value  operator()(const char* str) {
@@ -161,7 +161,7 @@ template <class T>
 // 	T& operator[](const char* p_name) { return *(extra[hash(p_name)]); }
 // 	T& operator[](const std::string& p_name) { return *(extra[hash(p_name)]); }
 	
-	const char* getname(hash_value hv) const { return hash_table::operator[](hv); }
+	const char* getname(hash_value hv) { return hash_table::operator[](hv); }
 	
 	virtual void resize(int n) { 
 		hash_table::resize(n);
@@ -206,6 +206,14 @@ template <class T> class hash_assoc_array {
 		std::lock_guard<std::mutex>  lock(hash_assoc_array_mutex);
 #endif
 		if ( i >= data.size() ) resize_vector_data();
+		return data[i];
+		}
+	
+	const T& operator[] (unsigned int i) const {
+#if TEPAPA_MULTITHREAD
+		std::lock_guard<std::mutex>  lock(hash_assoc_array_mutex);
+#endif
+		if ( i >= data.size() ) return false;
 		return data[i];
 		}
 	

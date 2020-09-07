@@ -556,7 +556,7 @@ regex_list regex_inducer(const sequences& seqs) {
 	
 	msgf(VL_INFO, "%u groups\n", substr_groups.size());
 	
-	const int unit_size = 10;
+	const int unit_size = 1; // 10
 	
 #if TEPAPA_MULTITHREAD
 	thread_manager tm;

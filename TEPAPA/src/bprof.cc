@@ -30,6 +30,10 @@ binary_profile::binary_profile(const vector<double>& v)
 	for(unsigned int i=0; i<v.size(); ++i) push_back( v[i]==0.0 ? false: true);
 	}
 
+binary_profile::binary_profile(const vector<bool>& v)
+	: vector<bool>(v), __iptr_member() {
+	}
+
 
 string binary_profile::digest() const {
 	char buf[ size() + 1 ];

@@ -95,7 +95,7 @@ template <class CHUNKTYPE> void TEPAPA_Discoverer_ChunkProfile<CHUNKTYPE>::run1(
 
 
 template <class CHUNKTYPE> void TEPAPA_Discoverer_ChunkProfile<CHUNKTYPE>::initialise() {
-	sample_list& sl = *sl_ptr;
+	const sample_list& sl = *sl_ptr;
 	
 	vvrs.clear() ;
 

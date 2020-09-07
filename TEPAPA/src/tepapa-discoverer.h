@@ -38,10 +38,13 @@ class TEPAPA_Discoverer {
 	protected:
 	ngram_registry          hr;
 	
-	sample_list*            sl_ptr;
-	vector<double>          v_score;
+	const sample_list*      sl_ptr;
+	vector<double>          v_score;    // outcome variable
+	vector<bool>            v_censored; // used in survival analysis
 	iptr<TEPAPA_Evaluator>  evaluator;
 	VariableList*           p_param;
+	bool                    f_use_lrp;
+        int                     min_support; // mininum support
 	
 	int    total_cnt_cls;
 	
@@ -61,7 +64,7 @@ class TEPAPA_Discoverer {
 
 	virtual ~TEPAPA_Discoverer() {}
 
-	void set_sample_list(sample_list&  p_sl_ptr) ;
+	void set_sample_list(const sample_list&  p_sl_ptr) ;
 	
 	virtual bool run() ;  // de novo learning
 	virtual bool run(TEPAPA_Results&  rr) ;  // meta-learner, default return = false
@@ -105,8 +108,8 @@ template <typename DISCOVERER_CLASS> int TEPAPA_Program_Discoverer<DISCOVERER_CL
 		return false;
 		}
 
-	discoverer -> set_sample_list( ds_input.sl );
-	
+	discoverer -> set_sample_list( ds_input.sl );      
+
 	if ( discoverer -> is_meta_learner() ) {
 		discoverer -> run(ds_input.rr);
 		}
@@ -124,10 +127,12 @@ template <typename DISCOVERER_CLASS> int TEPAPA_Program_Discoverer<DISCOVERER_CL
 	}
 
 
-#define  TEPAPA_ARGSTR_DISCOVERER_USE_WILDCARD       "-w"
-#define  TEPAPA_ARGSTR_DISCOVERER_USE_DEEP_CMP       "-d"
-#define  TEPAPA_ARGSTR_DISCOVERER_MAX_NGRAM          "-n"
-#define  TEPAPA_ARGSTR_DISCOVERER_POSITIVE_ONLY      "-p"
+#define  TEPAPA_ARGSTR_DISCOVERER_USE_WILDCARD             "-w"
+#define  TEPAPA_ARGSTR_DISCOVERER_USE_DEEP_CMP             "-d"
+#define  TEPAPA_ARGSTR_DISCOVERER_MAX_NGRAM                "-n"
+#define  TEPAPA_ARGSTR_DISCOVERER_POSITIVE_ONLY            "-p"
+#define  TEPAPA_ARGSTR_DISCOVERER_USE_LIKELIHOOD_RATIO     "-l"
+#define  TEPAPA_ARGSTR_DISCOVERER_MIN_SUPPORT              "-s"
 
 template <typename DISCOVERER_CLASS> TEPAPA_Program_Discoverer<DISCOVERER_CLASS>::TEPAPA_Program_Discoverer(const string& pname)
 	: TEPAPA_Program(pname) {
@@ -136,6 +141,7 @@ template <typename DISCOVERER_CLASS> TEPAPA_Program_Discoverer<DISCOVERER_CLASS>
 // 	f_wildcard = false;
 //	ngram = 100;
 	param[TEPAPA_ARGSTR_DISCOVERER_MAX_NGRAM] = 100;
+	param[TEPAPA_ARGSTR_DISCOVERER_MIN_SUPPORT] = 2;
 	
 	options_binary.push_back(
 		TEPAPA_option_binary(TEPAPA_ARGSTR_DISCOVERER_USE_WILDCARD, "--use-wildcard", "", 'b')
@@ -151,6 +157,14 @@ template <typename DISCOVERER_CLASS> TEPAPA_Program_Discoverer<DISCOVERER_CLASS>
 
 	options_optarg.push_back( 
 		TEPAPA_option_optarg(TEPAPA_ARGSTR_DISCOVERER_MAX_NGRAM, "--max-ngram", "", 'i')
+		);
+	
+	options_optarg.push_back( 
+		TEPAPA_option_optarg(TEPAPA_ARGSTR_DISCOVERER_MIN_SUPPORT, "--min-support", "", 'i')
+		);
+	
+	options_binary.push_back( 
+		TEPAPA_option_binary(TEPAPA_ARGSTR_DISCOVERER_USE_LIKELIHOOD_RATIO, "--use-likelihood-ratio", "", 'b')
 		); 
 	
 	}

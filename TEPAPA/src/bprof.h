@@ -34,6 +34,7 @@ struct binary_profile: public vector<bool>, public __iptr_member {
 	binary_profile(int n): vector<bool> (n), __iptr_member() {}
 	binary_profile(const char* hexdigest);
 	binary_profile(const vector<double>& v) ;
+	binary_profile(const vector<bool>& v) ;
 
 	
 	string digest() const;

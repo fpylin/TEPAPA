@@ -34,9 +34,11 @@ class pattern: public __iptr_member {
 	public:
 	virtual hash_value get_type_id() const =0;
 		
-	pattern(): __iptr_member() { hv_uniq_id = 0; /*hv_type_id = p_hv_type_id; */}
+	pattern(): __iptr_member() { hv_uniq_id = 0; /*hv_type_id = p_hv_type_id; */}       
 	
 	virtual ~pattern() {}
+	
+	virtual pattern* clone() const =0;       
 	
 	virtual string to_string(const string& delim="  ") const = 0;
 	
@@ -48,11 +50,11 @@ class pattern: public __iptr_member {
 	
 // 	virtual string serialise_proper() const =0;
 	
-// 	virtual string serialise() const;
+// 	virtual string serialise() const =0;
 	
 	virtual string gen_pcre() const { return ""; }
 	
-// 	static iptr<pattern>  unserialise(const string& str) ;
+	// 	static iptr<pattern>  unserialise(const string& str) ;
 	};
 
 

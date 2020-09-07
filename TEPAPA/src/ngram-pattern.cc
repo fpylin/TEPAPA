@@ -28,98 +28,75 @@ hash_value   ngram_pattern::ngram_pattern_hv_type_id = 0;
 
 
 
-bool ngram_pattern::match(const token_string&  ts) const {
+bool ngram_pattern::match(const token_string&  ts, const matching_range& r) const {
 	
-	const vector<int>& first_token_locs = ts.find_pos( front() );
+  const vector<size_t>& first_token_locs = ts.find_pos( front() );
 	
-	token_string::const_iterator s = ts.begin();
+  token_string::const_iterator s = ts.begin() + r.from;
+  token_string::const_iterator e = ts.begin() + r.to;
+  
 	
-	for (unsigned int z=0; z<first_token_locs.size(); ++z) {
+  for (unsigned int z=0; z<first_token_locs.size(); ++z) {
 		
-		token_string::const_iterator i = s + first_token_locs[z];
-		
-		bool f_terminate = false;
-		bool f_matched = true;
-		
-		for(unsigned int j=0; j<size(); ++j) {
+    token_string::const_iterator i = s + first_token_locs[z];
+    if ( i < s ) continue;
+	   
+    bool f_terminate = false;
+    bool f_matched = true;
+    
+    for(unsigned int j=0; j<size(); ++j) {
+      
+      token_string::const_iterator ij = i+j;
+      
+      if ( ij >= e ) { f_matched=false; f_terminate=true; break; }
 			
-			token_string::const_iterator ij = i+j;
+      hash_value hv_ng_j = *( begin() + j);
 			
-			if ( ij == ts.end() ) { f_matched=false; f_terminate=true; break; }
+      // if wants wildcard
+      // fprintf( stderr, "j=%d\t%d\t%s\n", j, (i+j)->primary(), ght[ (i+j)->primary() ] );
+      if ( f_use_wildcard && ( hv_ng_j == hv_wildcard) ) continue;
 			
-			hash_value hv_ng_j = *( begin() + j);
+      // if ( hv_separators.find(ij->primary()) != hv_separators.end() ) { f_matched=false; f_terminate=true; break; }
 			
-			// if wants wildcard
-// 			fprintf( stderr, "j=%d\t%d\t%s\n", j, (i+j)->primary(), ght[ (i+j)->primary() ] );
-			if ( f_use_wildcard && ( hv_ng_j == hv_wildcard) ) continue;
-			
-// 			if ( hv_separators.find(ij->primary()) != hv_separators.end() ) { f_matched=false; f_terminate=true; break; }
-			
-			if (f_deep_cmp) {// deep comparison, traversing through all subclasses
-				if ( ! ( ij->has_class( hv_ng_j ) ) ) { f_matched=false; break; }
-				}
-			else { // compare the primary token only.
-				if ( ij->primary() != hv_ng_j ) { f_matched=false; break; }
-				}
-			}
-		if (f_matched) return true;
-		if (f_terminate) break;
-		}
-	return false;
-	}
-	
-	
-token_string::const_iterator ngram_pattern::find(const token_string&  ts, token_string::const_iterator  start) const {
-	const vector<int>& first_token_locs = ts.find_pos( front() );
-	
-	token_string::const_iterator s = ts.begin();
-	
-	for (unsigned int z=0; z<first_token_locs.size(); ++z) {
-		token_string::const_iterator i = s + first_token_locs[z];
-		
-		if (i < start) continue;
-		bool f_terminate = false;
-		bool f_matched = true;
-		for(unsigned int j=0; j< size(); ++j) {
-			hash_value hv_ng_j = *( begin() + j);
-			
-			if ( i+j == ts.end() ) { f_matched=false; f_terminate=true; break; }
-			if ( ! ( (i+j)->has_class( hv_ng_j ) ) ) { f_matched=false; break; }
-			}
-		if (f_matched) return i;
-		if (f_terminate) break;
-		}
-	return ts.end();
-	}
+      if (f_deep_cmp) {// deep comparison, traversing through all subclasses
+	if ( ! ( ij->has_class( hv_ng_j ) ) ) { f_matched=false; break; }
+      }
+      else { // compare the primary token only.
+	if ( ij->primary() != hv_ng_j ) { f_matched=false; break; }
+      }
+    }
+    if (f_matched) return true;
+    if (f_terminate) break;
+  }
+  return false;
+}
 
 
-vector<int> ngram_pattern::find_all(const token_string&  ts) const {
-	const vector<int>& first_token_locs = ts.find_pos( front() );
-	vector<int> retval ;
-	
-	token_string::const_iterator s = ts.begin();
-	
-	for (unsigned int z=0; z<first_token_locs.size(); ++z) {
-		token_string::const_iterator i = s + first_token_locs[z];
-		bool f_matched = true;
-		for(unsigned int j=0; j<size(); ++j) {
-			hash_value hv_ng_j = *( begin() + j);
-			
-			if ( i+j == ts.end() ) { f_matched=false; break; }
-			if (f_deep_cmp) {
-				if ( ! ( (i+j)->has_class( hv_ng_j ) ) ) { f_matched=false; break; }
-				}
-			else 
-				{
-				if ( (! (i+j)->size()) ) { f_matched=false; break; }
-				if ( (i+j)->primary() != hv_ng_j )  { f_matched=false; break; }
-				}
-			}
-		if (f_matched) retval.push_back( first_token_locs[z] );
-		}
-	return retval ;
-	}
 
+matched_pos ngram_pattern::find(const token_string&  ts, const matching_range& r) const {
+  const vector<size_t>& first_token_locs = ts.find_pos( front() );
+  
+  token_string::const_iterator s = ts.begin() + r.from;
+  token_string::const_iterator e = ts.begin() + r.to;
+  
+  
+  for (unsigned int z=0; z<first_token_locs.size(); ++z) {
+    token_string::const_iterator i = s + first_token_locs[z];
+    
+    if (i < s) continue;
+    bool f_terminate = false;
+    bool f_matched = true;
+    for(unsigned int j=0; j< size(); ++j) {
+      hash_value hv_ng_j = *( begin() + j);
+      
+      if ( i+j >= e ) { f_matched=false; f_terminate=true; break; }
+      if ( ! ( (i+j)->has_class( hv_ng_j ) ) ) { f_matched=false; break; }
+    }
+    if (f_matched) return matched_pos( i, i+size() );
+    if (f_terminate) break;
+  }
+  return matched_pos( ts.end(), ts.end() );
+}
 
 
 
@@ -214,41 +191,43 @@ hash_value extractable_ngram_pattern::hv_extractable_ngram_pattern_id;
 
 
 string extractable_ngram_pattern::to_string() const {
-	string substr_str;
+  string substr_str;
 	
-	for(unsigned int i=0; i<size(); ++i) { 
-		if ( substr_str.length() > 0 ) substr_str += "  ";
-		hash_value h = *(begin()+i)  ;
-		if ((int)i == tag_i) substr_str += "?";
-		substr_str += ght[ h ] ;
-		}
-	return substr_str ;
-	}
+  for(unsigned int i=0; i<size(); ++i) { 
+    if ( substr_str.length() > 0 ) substr_str += "  ";
+    hash_value h = *(begin()+i)  ;
+    if ((int)i == tag_i) substr_str += "?";
+    substr_str += ght[ h ] ;
+  }
+  return substr_str ;
+}
 
 
 #include "math.h"
 
-double extractable_ngram_pattern::eval(const token_string&  ts) const {
-	double retval = nan("");
-		
-	token_string::const_iterator z = find( ts );
-		
-	if ( z == ts.end() ) return retval;
-	
-	// has to be an unique pattern .... 
-	token_string::const_iterator z1 = z;  ++z1;
-    
-	// ... otherwise we will bail out
-	if ( find(ts, z1) != ts.end() ) return retval;
-	
-	retval = atof( ght[ (z + tag_i) -> primary() ] );
-	
-	return retval;
-	}
+double extractable_ngram_pattern::eval(const token_string&  ts, const matching_range& r) const {
+  double retval = nan("");
+  
+  token_string::const_iterator z = find( ts, r ).first;
+  
+  if ( z == ts.end() ) return retval;
+  
+  // has to be an unique pattern .... 
+  token_string::const_iterator z1 = z;  ++z1;
+  
+  // ... otherwise we will bail out
+  if ( find(ts, matching_range(ts, z1) ).first != ts.end() ) return retval;
+  
+  retval = atof( ght[ (z + tag_i) -> primary() ] );
+  
+  return retval;
+}
 
-	
-ngram_pattern::ngram_pattern(const string& serialised_str): matchable_pattern(), vector<hash_value>() {
-	initialise();
+
+//////////////////////////////////////////////////////////////////////////
+ngram_pattern::ngram_pattern(const string& serialised_str):
+  matchable_pattern(), vector<hash_value>() {
+  initialise();
 }
 
 // #define NGRAM_PATTERN_TAG_O  "<elem>"

@@ -59,6 +59,13 @@ class predicate_pattern: virtual public ngram_pattern, public evaluable_pattern<
 	static map<hash_value, double(*)(const ngram_pattern&, const token_string&)>  func_table;
 
 	static void initialise();
+
+	virtual pattern* clone() const {
+	  predicate_pattern* prp = new predicate_pattern(hv_func);
+	  prp->hv_type_id = hv_type_id;
+	  for (const_iterator i=begin(); i!=end(); ++i) prp->push_back(*i);
+	  return prp;
+	}
 	
 	virtual bool is_numeric() const final { return true; }
 	virtual bool is_invalid(double v) const { return std::isnan(v); }

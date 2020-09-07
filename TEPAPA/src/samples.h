@@ -30,19 +30,29 @@
 // #include "regex.h"
 
 #include <assert.h>
-#include <stdio.h>
+#include <stdio.h> 
+
+#define OUTVAR_TYPE_AUTO           0
+#define OUTVAR_TYPE_BINARY         1
+#define OUTVAR_TYPE_NUMERIC        2
+#define OUTVAR_TYPE_SURVIVAL       3
+#define OUTVAR_TYPE_SYMBOLIC       4
+#define OUTVAR_TYPE_SYMBOLIC_LIST  5
+
 
 struct sample {
-	enum datatype {numeric_t=1, symbolic_t=2, symbol_list_t=3, null=0} dtype;
+  //	enum datatype {numeric_t=1, symbolic_t=2, symbol_list_t=3, survival_t=4, null=0} dtype;
 	hash_value           symbol;
 	int                  sample_order;
 	double               score;
+	bool                 censored; // For survival analysis, TRUE = censored; FALSE = event occurred
 	vector<hash_value>   symbol_list; // with symbol_list_t;
 	
 	vector<hash_value>   definitions;
 	token_string         data;
 	
-	sample(datatype pdtype=numeric_t){ dtype=pdtype; }
+  //	sample(datatype pdtype=numeric_t){ dtype=pdtype; }
+	sample(){}
 	
 	int load_definitions() ;
 	int load_charstring(const string& s) ; // treat each character as token
@@ -51,9 +61,6 @@ struct sample {
 	};
 	
 
-#define SAMPLE_LIST_OUTVAR_AUTO         0
-#define SAMPLE_LIST_OUTVAR_BINARY       1
-#define SAMPLE_LIST_OUTVAR_NUMERIC      2
 
 class sample_list: public vector<sample> {
 	int                     outvar_type;
@@ -63,21 +70,23 @@ class sample_list: public vector<sample> {
 	
 	bool is_outvar_binary()  const ;
 	bool is_outvar_numeric() const ;
+	bool is_outvar_survival() const ;
 	void guess_outvar_type();
+	int get_outvar_type() const { return outvar_type; }
 	
 	hash_assoc_array< binary_profile >  token_registry;
 	map<hash_value, double> atf;     // average term (token) frequency
 	map<hash_value, double> df;      // document frequency
 	map<hash_value, double> atfidf;  // average tf-idf
 	
-	bool load(const string& filename, sample::datatype pdtype=sample::numeric_t) ;
+	bool load(const string& filename, int pdtype=OUTVAR_TYPE_NUMERIC) ;
 	bool save(const string& filename) ;
 
 	bool load_charstrings(const string& filename) ;
 	
 	sample_list() ;
 	sample_list(const sample_list& sl);
-	sample_list(const string& filename, sample::datatype pdtype=sample::numeric_t) ;
+	sample_list(const string& filename, int pdtype=OUTVAR_TYPE_NUMERIC) ;
 	
 	int load_all_definitions() ;
 	void index_token_registry() ;
@@ -88,6 +97,7 @@ class sample_list: public vector<sample> {
 	void shuffle(); 
 	
 	vector<double>  get_scores() const ;
+	vector<bool>    get_censored() const ;
 	
 	bool summarise(map<hash_value, double>& OUT_statistics) const;
 	void reorder(const vector<int>& o);

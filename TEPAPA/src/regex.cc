@@ -366,74 +366,86 @@ void regex::push_back(const regex_element& re) {
 
 
 	
-bool regex::match(const token_string& s, const token_string::const_iterator si, const regex::const_iterator rj) const {
-	for (unsigned int k=0; k<rj->options.size(); ++k) {
-		bool matched_opt = true;
-		
-		const vector<hash_value>&  rj_options_k = rj->options[k];
-		
-		int option_len = rj_options_k.size() ;
-		
-		for (int l = 0; l<option_len; ++l) {
-			
-			if ( (si+l) == s.end() ) {  // already at the end of the string 
-				matched_opt = false;
-				break;
-				}
-			
-			if ( f_use_wildcard && (rj_options_k[l] == hv_wildcard) )  continue;
-				
-			if (f_deep_cmp) {
-				if ( ! (si+l)->has_class( rj_options_k[l] ) ) { // the character does not match
-					matched_opt = false;
-					break;
-					}
-				}
-			else {
-				if ( (si+l)->primary() != rj_options_k[l] ) { // the character does not match
-					matched_opt = false;
-					break;
-					}
-				}
-			}
-		
-		if (matched_opt) {
-			if ( (rj + 1) == end() ) return true;
-			if ( match( s, si+option_len, rj+1) )  return true;
-			}
-		}
-	return false;
+bool regex::match(const token_string& s, const token_string::const_iterator si, const regex::const_iterator rj, token_string::const_iterator* si_end) const {
+  for (unsigned int k=0; k<rj->options.size(); ++k) {
+    bool matched_opt = true;
+    
+    const vector<hash_value>&  rj_options_k = rj->options[k];
+    
+    int option_len = rj_options_k.size() ;
+    
+    for (int l = 0; l<option_len; ++l) {
+      
+      if ( (si+l) == s.end() ) {  // already at the end of the string 
+	matched_opt = false;
+	break;
+      }
+      
+      if ( f_use_wildcard && (rj_options_k[l] == hv_wildcard) )  continue;
+      
+      if (f_deep_cmp) {
+	if ( ! (si+l)->has_class( rj_options_k[l] ) ) { // the character does not match
+	  matched_opt = false;
+	  break;
 	}
+      }
+      else {
+	if ( (si+l)->primary() != rj_options_k[l] ) { // the character does not match
+	  matched_opt = false;
+	  break;
+	}
+      }
+    }
+    
+    if (matched_opt) {
+      if ( (rj + 1) == end() ) {
+	if (si_end) *si_end = si+1;
+	return true;
+      }
+      
+      if ( match( s, si+option_len, rj+1) )  {
+	if (si_end) *si_end = si+1;
+	return true;
+      }
+    }
+  }
+  return false;
+}
 
 
 bool regex::match(const token_string&  ts) const {
-	for (token_string::const_iterator i=ts.begin(); i!=ts.end(); ++i) {
-		if ( match( ts, i, begin() ) ) return true;
-		}
-	return false;
-	}
+  for (token_string::const_iterator i=ts.begin(); i!=ts.end(); ++i) {
+    if ( match( ts, i, begin() ) ) return true;
+  }
+  return false;
+}
 
 	
-token_string::const_iterator regex::find(const token_string&  ts, token_string::const_iterator  start) const {
-	for (token_string::const_iterator i=start; i!=ts.end(); ++i) {
-		if ( match( ts, i, begin() ) ) return i;
-		}
-	return ts.end();
-	}
+matched_pos regex::find(const token_string&  ts, const matching_range& r) const {
+  token_string::const_iterator s = ts.begin() + r.from;
+  token_string::const_iterator e = ts.begin() + r.to;
+
+  token_string::const_iterator j;
+  for (token_string::const_iterator i=s; i<e; ++i) {
+    if ( match( ts, i, begin(), &j ) ) return matched_pos(i, j);
+  }
+  return matched_pos( ts.end(), ts.end() );
+}
 
 	
-vector<int> regex::find_all(const token_string&  ts) const {
-	vector<int>  retval;
+/*
+vector<size_t> regex::find_all(const token_string&  ts) const {
+  vector<size_t>  retval;
 	
-	token_string::const_iterator s=ts.begin();
-	
-	for (unsigned int i=0; i<ts.size(); ++i) {
-		if ( match( ts, s+i, begin() ) ) retval.push_back(i);
-		}
-	
-	return retval;
-	}
-
+  token_string::const_iterator s=ts.begin();
+  
+  for (unsigned int i=0; i<ts.size(); ++i) {
+    if ( match( ts, s+i, begin() ) ) retval.push_back(i);
+  }
+  
+  return retval;
+}
+*/
 
 double regex_element::atfidf(const sample_list& sl) const { 
 	double x = 0;

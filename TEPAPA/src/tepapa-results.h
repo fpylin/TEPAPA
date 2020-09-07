@@ -39,8 +39,11 @@ struct TEPAPA_Result {
 	binary_profile        bprof;  // binary profile
 	vector<double>        val;    // values (only used in numeric classes)
 	bool                  sel;    // selected (e.g., as an informarker)
+  
+        double                sens; // sensitivity (binary class only)
+        double                spec; // specificity (binary class ounly)
 	
-	TEPAPA_Result() { est=0; pval=0; dir=0; npos=0; group=0; method=0; sel=false; }
+        TEPAPA_Result() { est=0; pval=0; dir=0; npos=0; group=0; method=0; sel=false; sens = 0; spec = 0; }
 	
 	bool is_numeric() const { return (val.size() > 0); }
 
@@ -67,6 +70,14 @@ struct pval_est_pair: public pair<double,double> {
 	};
 
 
+#define TEPAPA_RESULT_FILTER_GT  1
+#define TEPAPA_RESULT_FILTER_LT  2
+#define TEPAPA_RESULT_FILTER_NE  3
+#define TEPAPA_RESULT_FILTER_EQ  4
+#define TEPAPA_RESULT_FILTER_GE  5
+#define TEPAPA_RESULT_FILTER_LE  6
+
+
 class TEPAPA_Results: public vector<TEPAPA_Result> {
 // 	bool sort_by_pval(const TEPAPA_Result& a, const TEPAPA_Result& b ) ;
 	static std::mutex  append_mutex;
@@ -84,6 +95,8 @@ class TEPAPA_Results: public vector<TEPAPA_Result> {
 	void sort_by_pval() ;
 	void sort_by_est() ;
 	void sort(const string& order_by="p") ;
+
+	TEPAPA_Results filter(const char field, const unsigned int cmp, double value) const;
 	
 	void append(const TEPAPA_Results& rr);
 	void push_back_safe(const TEPAPA_Result& r);

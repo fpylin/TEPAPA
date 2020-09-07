@@ -65,7 +65,7 @@ void TEPAPA_Tester::run1(unsigned int pstart, unsigned int pend) {
 			evaluator -> eval_numeric( prof.bp, v_score, prof.vs, patterns_to_test[i] );
 			}
 		else { // symbolic
-			evaluator -> eval_symbolic( prof.bp, v_score, patterns_to_test[i] );
+		  evaluator -> eval_symbolic( prof.bp, outvar_vectors_t(v_score), patterns_to_test[i] );
 			}
 		}
 	}
@@ -110,7 +110,7 @@ int TEPAPA_Tester::run() {
 	
 	const sample_list& sl = *( (const sample_list*)sl_ptr );
 
-	evaluator= new TEPAPA_Evaluator( sl.is_outvar_binary() );
+	evaluator= new TEPAPA_Evaluator( sl );
 
 	batch_process<iptr<pattern>>(patterns_to_test, [&](iptr<pattern>& p) -> void{
 		if ( ! match_type(p) ) return;
@@ -123,7 +123,7 @@ int TEPAPA_Tester::run() {
 			evaluator -> eval_numeric( prof.bp, v_score, prof.vs, p );
 			}
 		else { // symbolic
-			evaluator -> eval_symbolic( prof.bp, v_score, p );
+  		  evaluator -> eval_symbolic( prof.bp, outvar_vectors_t(v_score), p );
 			}
 		},
 		10

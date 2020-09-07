@@ -148,10 +148,17 @@ struct two_class_stats {
 	double ci95_h_or(void) const { return exp(log(o_r()) + 1.96 * se_log_or());}
 		
 	double rr() const  { return ppv() / (1-npv()); }
+  
+	double log_lrp()  const  {
+		double v_adj = ( (tp == 0) || (tp+fn==0) || (fp==0) || (fp+tn==0) ) ? 0.5 : 0;
+		return ( (log(tp+v_adj) - log(tp+fn+2*v_adj)) - (log(fp+v_adj) - log(fp+tn+2*v_adj)) );
+		}
+  
 	double lrp()  const  {
 		double v_adj = ( (tp == 0) || (tp+fn==0) || (fp==0) || (fp+tn==0) ) ? 0.5 : 0;
 		return ((tp+v_adj)/(tp+fn+2*v_adj)) / ((fp+v_adj)/(fp+tn+2*v_adj));
 		}
+  
 	double lrn()  const  {
 		double v_adj = ( (fn == 0) || (tp+fn==0) || (tn ==0) || (fp+tn==0) ) ? 0.5 : 0;
 		return ((fn+v_adj)/(tp+fn+2*v_adj)) / ((tn+v_adj)/(fp+tn+2*v_adj));
@@ -227,7 +234,11 @@ double spearman(const vector<double>& x, const vector<double>& y, double* ppval=
 
 template <typename T> vector<T> get_levels(const vector<T>& v) {
 	set<T> vs;
-	for(unsigned int i=0; i<v.size(); ++i) vs.insert( v[i] );
+// 	fprintf(stderr, "v.size() = %ld\n", v.size());
+	for(unsigned int i=0; i<v.size(); ++i) {
+// 		fprintf(stderr, "v[%d] = %d ", i, v[i]);
+		vs.insert( v[i] );
+	}
 	vector<T> retval(vs.begin(), vs.end());
 	
 	return retval;
@@ -258,4 +269,16 @@ template <typename T> double eucliean_distance(const vector<T> &v1, const vector
 	}
 
 
+
+// Log-Rank test for survival analysis
+
+double logrank_test( 
+	const vector<double>& v1,// Survival in number, Group 1, usually indicates feature POSITIVE
+	const vector<bool>& e1,  // TRUE = event, FALSE = censored
+	const vector<double>& v2,// Survival in number, Group 2
+	const vector<bool>& e2,  // TRUE = event, FALSE = censored
+	double* out_est_log_HR=0,  // estimated hazard ratio.
+	double* out_Z=0  // log-rank Z static
+	);
+	
 #endif

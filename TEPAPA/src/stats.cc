@@ -22,6 +22,7 @@
 #include "strfriends.h"
 #include "config.h"
 #include <mutex>
+#include <gsl/gsl_cdf.h>
 
 vector<double> LOG(const vector<double>& v) {
 	vector<double> retval(v.size());
@@ -425,7 +426,7 @@ inline double cc(double x) {if (x < 1) return x + 0.5; return x; }
 
 double odds_ratio(int a, int b, int c, int d) {
 	double p = 1;
-	bool f_do_cc = ( (uint)(a) & (uint)(b) & (uint)(c) & (uint)(d) );
+	bool f_do_cc = ( (a==0) || (b==0) || (c==0) || (d==0) );
 	if (f_do_cc) {
 		p *= double(a);
 		p *= double(d);
@@ -439,4 +440,91 @@ double odds_ratio(int a, int b, int c, int d) {
 		p /= double(c) + 0.5;
 		}
 	return p;
+	}
+
+// Log-Rank test for survival analysis
+
+struct logrank_table_entry {
+	unsigned int e1;  // group 1, number of events
+	unsigned int c1;  // group 1, number censored
+	unsigned int e2;  // group 2, number of events
+	unsigned int c2;  // group 2, number censored
+	logrank_table_entry() { e1=0; c1=0; e2=0; c2=0; }
+	};
+
+double logrank_test(
+	const std::vector<double>& v1, const std::vector<bool>& e1,  
+	const std::vector<double>& v2, const std::vector<bool>& e2,
+	double* out_est_log_HR, double* out_Z  
+	) {
+	assert( v1.size() == e1.size() );
+	assert( v2.size() == e2.size() );
+	
+	std::map <double,logrank_table_entry>  timepoint;
+	
+	unsigned int n1 = v1.size();
+	unsigned int n2 = v2.size();
+	double N = n1 + n2;
+	
+	for (unsigned int i=0; i<n1; ++i) {
+		if (e1[i]) 
+			timepoint[ v1[i] ].e1 ++;
+		else 
+			timepoint[ v1[i] ].c1 ++;
+		}
+	
+	for (unsigned int i=0; i<n2; ++i) {
+		if (e2[i]) 
+			timepoint[ v2[i] ].e2 ++;
+		else 
+			timepoint[ v2[i] ].c2 ++;
+		}
+		
+	double sum_O_E1 = 0.0;  // sum of (O-E) for group 1 and 2
+	double sum_var1 = 0.0;  // sum of var(O-E) for group 1 and 2
+	double sum_chisq1 = 0.0;
+	double sum_e = 0;
+	double sum_e1 = 0;
+	double sum_e2 = 0;
+	double sum_c1 = 0;
+	double sum_c2 = 0;
+	double sum_E1 = 0; // sum of expected number at risk for group 1
+	double sum_E2 = 0; // sum of expected number at risk for group 2
+
+	for (auto i=timepoint.begin(); i!= timepoint.end(); ++i) {
+		unsigned int e1 = i->second.e1, c1 = i->second.c1;
+		unsigned int e2 = i->second.e2, c2 = i->second.c2;
+ 		double n = double(n1 + n2) ; // total number at risk in both groups
+ 		double e = double(e1 + e2) ; // total number of events in both groups;
+ 		double E1 = e * (n1 / n); // expected number of events for group 1
+		double O_E1 = e1 - E1;   
+		sum_O_E1 += O_E1;
+		sum_e += e;		
+		sum_e1 += e1;		
+		sum_e2 += e2;		
+		sum_c1 += c1;		
+		sum_c2 += c2;		
+		if (E1 > 0) sum_chisq1 += O_E1 * O_E1 / E1;
+		if (n > 1) {
+			double V1 = (e * (n - e) * n1 * (n - n1) ) / ( n * n * (n-1) );
+			sum_var1 += V1;
+			}
+		sum_E1 += e * n1 / n;
+		sum_E2 += e * n2 / n;
+		n1 -= e1 + c1;
+		n2 -= e2 + c2;
+		}
+	
+	double logrankstat_chisq = (sum_O_E1 * sum_O_E1 / sum_var1);
+	double Z = sum_O_E1 / sqrt(sum_var1);
+	double pval_X2 = gsl_cdf_chisq_Q (logrankstat_chisq, 1); // log-rank statistic (chisq with 1 degree of freedom)
+	//	double est_log_HR = Z * sqrt( 4 / sum_e );
+	//	double est_log_HR = log(sum_e1) - log(v1.size() / N * sum_e) - log(sum_e2) + log(v2.size() / N * sum_e);
+	//	double est_log_HR = log(sum_e1) - log((n1 + sum_c1) ) - log(sum_e2) + log((n2 + sum_c2));
+	// Estimating Hazard ratio by Bernstein method Biometric 1981; 37: 513-9 
+	double est_log_HR = log(sum_e1) - log( sum_E1 ) - log(sum_e2) + log( sum_E2 );
+	if (out_est_log_HR) *out_est_log_HR = est_log_HR ; 
+	if (out_Z) *out_Z = Z; 
+		
+	return pval_X2;
 	}

@@ -203,6 +203,47 @@ void TEPAPA_Results::sort(const string& order_by) {
 	}
 
 
+
+TEPAPA_Results TEPAPA_Results::filter(const char field, const unsigned int cmp, double value) const {
+
+
+  TEPAPA_Results retval;
+  
+  for (const_iterator i=begin(); i!=end(); ++i) {
+    double z = 0.0;
+    switch(field) {
+    case 'D':  z = fabs(i->dir); break;
+    case 'd':  z = i->dir; break;
+    case 'E':  z = fabs(i->est); break;
+    case 'e':  z = i->est; break;
+    case 'p':  z = i->pval; break;
+    case 'n':  z = i->npos; break;
+    default: msgf(VL_FATAL, "%s, No such field in `%c'", __PRETTY_FUNCTION__, field);
+      break;
+    };
+    
+    bool tf = false;
+    switch(cmp){
+    case TEPAPA_RESULT_FILTER_GT: tf = z >  value; break;
+    case TEPAPA_RESULT_FILTER_LT: tf = z <  value; break;
+    case TEPAPA_RESULT_FILTER_NE: tf = z != value; break;
+    case TEPAPA_RESULT_FILTER_EQ: tf = z == value; break;
+    case TEPAPA_RESULT_FILTER_GE: tf = z >= value; break;
+    case TEPAPA_RESULT_FILTER_LE: tf = z <= value; break;
+    default: msgf(VL_FATAL, "%s, Invalid comparator `%d'", __PRETTY_FUNCTION__, cmp);
+      break;
+    };
+    
+    if(tf) retval.push_back(*i);
+  }
+  return retval;
+  
+}
+
+
+
+
+
 void TEPAPA_Results::dump(const string& fmt) const {
 	for(const_iterator it=begin(); it!=end(); ++it) {
 		string s = it->to_string(fmt);

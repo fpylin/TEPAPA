@@ -41,7 +41,7 @@ template <typename T> class mat_spec {
 	mat_spec(int pr=0, int pc=0) {
 		rows = pr;
 		cols = pc;
-		if (rows*cols) {
+		if (rows && cols) {
 			v.resize(rows*cols);
 			for(int i=0; i<rows*cols; ++i) v[i] =0;
 			}
@@ -71,8 +71,8 @@ template <typename T> class mat_spec {
 	template <typename U> friend mat_spec<U> sub(const mat_spec<U> & m, int r0, int c0, int nr, int nc) ;
 	template <typename U> friend mat_spec<U> rbind(const mat_spec<U> & m1, const mat_spec<U> & m2);
 	template <typename U> friend mat_spec<U> cbind(const mat_spec<U> & m1, const mat_spec<U> & m2);
-	template <typename U> friend mat_spec<U> rbind(const mat_spec<U> & m1, T& constant=0);
-	template <typename U> friend mat_spec<U> cbind(const mat_spec<U> & m1, T& constant=0);
+	template <typename U> friend mat_spec<U> rbind(const mat_spec<U> & m1, T& constant);
+	template <typename U> friend mat_spec<U> cbind(const mat_spec<U> & m1, T& constant);
 	template <typename U> friend mat_spec<U> rdel(const mat_spec<U> & m1, int r0);
 	template <typename U> friend mat_spec<U> cdel(const mat_spec<U> & m1, int c0);
 	

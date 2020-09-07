@@ -242,8 +242,8 @@ int TEPAPA_Program_LoadCases::run(TEPAPA_dataset&  ds_input, TEPAPA_Results&  rr
 	
 	ds_input.sl.clear();
 	ds_input.sl.load( expanded_case_definition_file.c_str() );
-	ds_input.sl.sort();
 	ds_input.sl.guess_outvar_type();
+	ds_input.sl.sort();
 	ds_input.sl.load_all_definitions();
 
 	return TEPAPA_RETVAL_SUCCESS;
@@ -268,8 +268,9 @@ int TEPAPA_Program_LoadCharstring::run(TEPAPA_dataset&  ds_input, TEPAPA_Results
 	
 	ds_input.sl.clear();
 	ds_input.sl.load_charstrings( expanded_value_string_file.c_str() );
-	ds_input.sl.sort();
 	ds_input.sl.guess_outvar_type();
+	ds_input.sl.sort();
+	ds_input.sl.index_token_registry();
 
 	return TEPAPA_RETVAL_SUCCESS;
 	}

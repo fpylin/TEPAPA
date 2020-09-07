@@ -26,6 +26,7 @@
 #include "bprof.h"
 #include "roc.h"
 #include "pattern.h"
+#include "samples.h"
 #include "tepapa-results.h"
 
 #if TEPAPA_MULTITHREAD
@@ -34,31 +35,63 @@
 #endif // TEPAPA_MULTITHREAD
 
 
-typedef  map<string, TEPAPA_Result >   stats_cache_struct    ;
+typedef  map< pair<hash_value, string>, TEPAPA_Result >   stats_cache_struct    ;
+
+
+struct outvar_vectors_t {
+  const vector<double>* p_v_score;
+  const vector<bool>*   p_v_censored;
+
+  outvar_vectors_t(){ p_v_score=0; p_v_censored=0; }
+  
+  outvar_vectors_t(const vector<double>& v_score){
+    p_v_score = &v_score;
+    p_v_censored = 0;
+  }
+  
+  outvar_vectors_t(const vector<double>& v_score, const vector<bool>& v_censored){
+    p_v_score = &v_score;
+    p_v_censored = &v_censored;
+  }  
+};
+
 
 class TEPAPA_Evaluator: public __iptr_member {
 	stats_cache_struct    stats_cache;
 	TEPAPA_Results        results;
+	bool                  use_lrp;
 #if TEPAPA_MULTITHREAD
 	std::mutex  evaluator_mutex;
 #endif // TEPAPA_MULTITHREAD
 	
-	bool f_outvar_is_binary ;
+	int outvar_type;
 	
 	void eval_auroc(const binary_profile& vb, const vector<double>& v_score, iptr<pattern>& ppatt, double* p_pval_out=0);
 	void eval_fisher_exact(const binary_profile& vb, const vector<double>& v_score, iptr<pattern>& ppatt, double* p_pval_out=0);
+	void eval_logrank(const binary_profile& vb, const vector<double>& v_score, const vector<bool>& v_censored, iptr<pattern>& ppatt, double* p_pval_out=0);
 	bool eval_spearman(const binary_profile& mask, const vector<double>& v_score, const vector<double>& v_predictors, iptr<pattern>& ppatt, double* p_pval_out=0);
 	bool eval_auroc_rev(const binary_profile& mask, const vector<double>& v_score, const vector<double>& v_predictors, iptr<pattern>& ppatt, double* p_pval_out=0);
 
 	public:
-	TEPAPA_Evaluator(bool p_f_outvar_is_binary){ 
-		f_outvar_is_binary = p_f_outvar_is_binary;
-		}
+	//	TEPAPA_Evaluator(int p_outvar_type){ 
+	//	  outvar_type = p_outvar_type;
+	//	}
+
+	TEPAPA_Evaluator(const sample_list& sl){ 
+	  outvar_type = sl.get_outvar_type();
+	  use_lrp = false;
+	}
+
+	void set_use_lrp (bool p_use_lrp) { use_lrp = p_use_lrp; }
 	
 	virtual ~TEPAPA_Evaluator(){}
 
-	void eval_symbolic(const binary_profile& vb, const vector<double>& v_score, iptr<pattern>& ppatt, double* p_pval_out=0);
-	bool eval_numeric(const binary_profile& mask, const vector<double>& v_score, const vector<double>& v_predictors, iptr<pattern>& ppatt, double* p_pval_out=0);
+	void eval_symbolic(const binary_profile& vb, const outvar_vectors_t& ovt, iptr<pattern>& ppatt, double* p_pval_out=0);
+	
+	bool eval_numeric(const binary_profile& mask, const outvar_vectors_t& ovt, const vector<double>& v_predictors, iptr<pattern>& ppatt, double* p_pval_out=0);
+
+	// The following function is for matching partial sample set
+	void eval_symbolic(const binary_profile& vb, const outvar_vectors_t& ovt, const binary_profile& mask, iptr<pattern>& ppatt, double* p_pval_out=0);	
 
 	void reset() { results.clear(); }
 	const TEPAPA_Results&  get_results() { return results; }

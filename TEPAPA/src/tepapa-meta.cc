@@ -26,27 +26,23 @@
 
 #include "fgroup.h"
 
+#include <signal.h>
+
 /* FIXME: Current BUGGY! DO NOT USE
  */
 
-TEPAPA_Program_Meta_Pattern_Learner::TEPAPA_Program_Meta_Pattern_Learner() :
-	TEPAPA_Program("@DiscoverMetaPatterns") {
-		
-	depth = 1;
-	f_gen_by_cooc_sig = false;
+TEPAPA_Program_Discoverer_MetaPattern::TEPAPA_Program_Discoverer_MetaPattern() :
+	TEPAPA_Program_Discoverer<TEPAPA_Discoverer_MetaPattern>("@DiscoverMetaPatterns") {
+	
+	param[TEPAPA_ARGSTR_DISCOVERER_META_PATTERN_DEPTH] = 5;
 	
 	options_optarg.push_back( 
-		TEPAPA_option_optarg ("-d", "--depth", "", 'i', &depth)
+		TEPAPA_option_optarg (TEPAPA_ARGSTR_DISCOVERER_META_PATTERN_DEPTH, "--depth", "", 'i')
 		);
-	
-	options_binary.push_back( 
-		TEPAPA_option_binary("-g", "--generate-by-cooccurrence-signature", "", 'b', &f_gen_by_cooc_sig)
-		);
-	
 	}
 
 
-MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_AND(const TEPAPA_Result& r1, const TEPAPA_Result& r2) {
+MPL_retval_struct TEPAPA_Discoverer_MetaPattern::MPL_AND(const TEPAPA_Result& r1, const TEPAPA_Result& r2) {
 	MPL_retval_struct  retval;
 	retval.bprof_out  = r1.bprof;
 	retval.bprof_out &= r2.bprof;
@@ -56,14 +52,17 @@ MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_AND(const TEPAPA_Resu
 		
 	if ( retval.bprof_out.npos() <= 1 || retval.bprof_out.npos() >= retval.bprof_out.size() - 1 ) return retval;
 	
-	retval.mp = new meta_pattern( ght("AND") );
-	retval.mp->push_back( r1.patt );
-	retval.mp->push_back( r2.patt );
+	meta_pattern* mpp = new meta_pattern( ght("AND") );;
+	mpp->push_back( r1.patt->clone() );
+	mpp->push_back( r2.patt->clone() );
+	retval.mp = mpp;
 	
 	return retval;
 	}
 
-MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_FOLLOW(const sample_list& sl, const TEPAPA_Result& r1, const TEPAPA_Result& r2) {
+
+
+MPL_retval_struct TEPAPA_Discoverer_MetaPattern::MPL_FOLLOW(const sample_list& sl, const TEPAPA_Result& r1, const TEPAPA_Result& r2) {
 	MPL_retval_struct  retval;
 	retval.bprof_out  = r1.bprof;
 	retval.bprof_out &= r2.bprof;
@@ -89,8 +88,8 @@ MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_FOLLOW(const sample_l
 			continue;
 			}
 		
-		vector<int> vi1 = ngp1->find_all( sl[i].data );
-		vector<int> vi2 = ngp2->find_all( sl[i].data );
+		vector<size_t> vi1 = ngp1->find_all( sl[i].data );
+		vector<size_t> vi2 = ngp2->find_all( sl[i].data );
 		
 		bool f_found = false;
 		for(unsigned int j1=0; j1<vi1.size(); j1++) {
@@ -113,7 +112,7 @@ MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_FOLLOW(const sample_l
 	return retval;
 	}
 
-MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_OR(const TEPAPA_Result& r1, const TEPAPA_Result& r2) {
+MPL_retval_struct TEPAPA_Discoverer_MetaPattern::MPL_OR(const TEPAPA_Result& r1, const TEPAPA_Result& r2) {
 	MPL_retval_struct  retval;
 	retval.bprof_out  = r1.bprof;
 	retval.bprof_out |= r2.bprof;
@@ -130,7 +129,7 @@ MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_OR(const TEPAPA_Resul
 	return retval;
 	}
 
-MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_NOT(const TEPAPA_Result& r1) {
+MPL_retval_struct TEPAPA_Discoverer_MetaPattern::MPL_NOT(const TEPAPA_Result& r1) {
 	MPL_retval_struct  retval;
 	
 	retval.bprof_out = ! r1.bprof;
@@ -146,154 +145,218 @@ MPL_retval_struct TEPAPA_Program_Meta_Pattern_Learner::MPL_NOT(const TEPAPA_Resu
 	}
 
 
-bool TEPAPA_Program_Meta_Pattern_Learner::handle_argv(const vector<string>& argv) {
-	
-	fmts = argv;
-	
-	return true;
-	}
 
 
-bool TEPAPA_Program_Meta_Pattern_Learner::do_evaluate(const MPL_retval_struct& pat_match) {
-		
-	if (!pat_match.mp) return false;
+bool TEPAPA_Discoverer_MetaPattern::do_evaluate(const MPL_retval_struct& pat_match) {		
 	
-	iptr<pattern> pp = pat_match.mp;
+  if (! pat_match.mp) return false;
+  pattern* p = pat_match.mp->clone();
+  iptr<pattern> pp = p;
+
+  evaluator -> eval_symbolic( pat_match.bprof_out, outvar_vectors_t(v_score), pp );
 	
-	evaluator -> eval_symbolic( pat_match.bprof_out, v_score, pp );
-	
-	return true;
-	}
-	
-void TEPAPA_Program_Meta_Pattern_Learner::set_v_score(const sample_list& sl) {
-	
-	v_score.clear();
-	
-	for(unsigned int i=0; i<sl.size(); ++i)  v_score.push_back(sl[i].score);
-	
-	vector<double>  v_score_levels = get_levels( v_score ); 
-	
-	f_is_binary = ( v_score_levels.size() == 2 );
-	}
+  return true;
+}
 	
 
 
-int TEPAPA_Program_Meta_Pattern_Learner::run(TEPAPA_dataset&  ds_input, TEPAPA_Results&  rr_output) {
-	
-	TEPAPA_Results  rr = ds_input.rr;
-	TEPAPA_Results  rr_new ;
+#include "stats.h"
 
-	if (f_gen_by_cooc_sig) {
-		if ( gen_meta_pattern_by_cooccurrence_signature(rr_new, rr) ) {
-			rr_output = rr_new ;
-			}
+MPL_retval_struct mk_meta_pattern(hash_value hv_op, const TEPAPA_Results& rr, const vector<unsigned int>& v) {
 
-		return TEPAPA_RETVAL_SUCCESS;
-		}
+  MPL_retval_struct  retval;
 	
-	set_v_score(ds_input.sl);
-	
-	evaluator = new TEPAPA_Evaluator( ds_input.sl.is_outvar_binary() );
-	
-	for(int d=0; d<depth; ++d) {
-		msgf(VL_DEBUG, "Processing depth %lu:\n", d);
-		evaluator -> reset();
-		
-		int before = rr.size();
-		reduce_by_collapse_subpatterns<binary_profile>(rr, rr, ds_input.sl) ;
-		
-		int after = rr.size();
-		
-		msgf(VL_DEBUG, "Reduced from %lu to %lu features.\n", before, after);
-		
-		for (unsigned int k=0; k<fmts.size(); ++k) {
-			if ( fmts[k] == string("NOT") ) {
-				for(unsigned int i=0; i<rr.size(); ++i) {
-					do_evaluate( MPL_NOT( rr[i] ) ) ;
-					}
-				continue;
-				}
-					
-			if ( fmts[k] == string("AND") ) {
-				for(unsigned int i=0; i<rr.size(); ++i) {
-					for(unsigned int j=i+1; j<rr.size(); ++j) {
-						do_evaluate( MPL_AND( rr[i], rr[j] ) ) ;
-						}
-					}
-				continue;
-				}
-			
-			if ( fmts[k] == string("OR") ) {
-				for(unsigned int i=0; i<rr.size(); ++i) {
-					for(unsigned int j=i+1; j<rr.size(); ++j) {
-						do_evaluate( MPL_OR( rr[i], rr[j] ) ) ;
-						}
-					}
-				continue;
-				}
-				
-			if ( fmts[k] == string("FOLLOW") ) {
-				for(unsigned int i=0; i<rr.size(); ++i) {
-					for(unsigned int j=0; j<rr.size(); ++j) {
-						if (i == j) continue;
-						do_evaluate( MPL_FOLLOW( ds_input.sl, rr[i], rr[j] ) ) ;
-						}
-					}
-				continue;
-				}
-			}
-			
-		TEPAPA_Results rr1 = evaluator -> get_results();
-		
-		reduce_by_collapse_subpatterns<binary_profile>(rr1, rr1, ds_input.sl) ;
-		
-		rr.append( rr1 );
-		rr_new.append( rr1 );
-		}
-	
-	rr_output = rr_new ;
-
-	return TEPAPA_RETVAL_SUCCESS;
-	}
-
-#include "tepapa-utils.h"
+  retval.bprof_out = rr[v[0]].bprof;
+  
+  for (unsigned int i=1; i<v.size(); ++i) retval.bprof_out &= rr[v[i]].bprof;
+  
+  if ( retval.bprof_out.npos() <= 1 || retval.bprof_out.npos() >= retval.bprof_out.size() - 1 ) return retval;
+  
+  meta_pattern* mpp = new meta_pattern( hv_op ); // ght("AND")
+  
+  for (unsigned int i=0; i<v.size(); ++i) {
+    mpp->push_back( rr[v[i]].patt->clone() );
+  }
+  
+  retval.mp = mpp;
+  
+  return retval;
+}
 
 
-int TEPAPA_Program_Meta_Pattern_Learner::gen_meta_pattern_by_cooccurrence_signature(TEPAPA_Results& rr_out, const TEPAPA_Results& rr) {
-	
-	rr_out.clear();
-	
-	map<binary_profile, TEPAPA_Results>  results_by_bprof = rr.group_by_signature<binary_profile>();
-	map<binary_profile, TEPAPA_Results> ::iterator  k;
-	
-	int group_id =1;
-	
-	for(k=results_by_bprof.begin(); k!=results_by_bprof.end(); ++k, ++group_id) {
-	
-		if (k->second.size() <= 1)  {
-			rr_out.push_back( k->second.front() );
-			continue;
-			}
-		
-		TEPAPA_Results v, nv;
-		
-		split_mergeable_subsets(v, nv, k->second);
-		
-		v = v.collapse_subpatterns();
+MPL_retval_struct mk_meta_pattern(hash_value hv_op, const TEPAPA_Results& rr, const vector<unsigned int>& v, const vector<bool>& v_neg) {
 
-		if (v.size() <= 1)  continue;
-		
-		meta_pattern* mp = new meta_pattern( ght("OR") );
-		
-		for( unsigned int i=0; i<v.size(); ++i )  mp->push_back( v[i].patt );
+  MPL_retval_struct  retval;
 	
-		TEPAPA_Result  v_new;
-		v_new.patt = mp;
-		
-		rr_out.push_back( v_new );
-		
-		append(rr_out, nv);
-		}
+  retval.bprof_out = rr[v[0]].bprof;
+  
+  for (unsigned int i=1; i<v.size(); ++i) retval.bprof_out &= rr[v[i]].bprof;
+  
+  if ( retval.bprof_out.npos() <= 1 || retval.bprof_out.npos() >= retval.bprof_out.size() - 1 ) return retval;
+  
+  meta_pattern* mpp = new meta_pattern( hv_op ); // ght("AND")
+  
+  for (unsigned int i=0; i<v.size(); ++i) {
+    if ( v_neg[i] == true )  {
+      meta_pattern* mpp1 = new meta_pattern( ght("NOT") );
+      mpp1->push_back( rr[v[i]].patt->clone() );
+      iptr<pattern> impp1 = mpp1;
+      mpp->push_back( impp1 );
+    }
+    else {
+      mpp->push_back( rr[v[i]].patt->clone() );
+    }
+  }
+  
+  retval.mp = mpp;
+  
+  return retval;
+}
+
+
+
+
+
+
+bool TEPAPA_Discoverer_MetaPattern::gen_MPL_AND_recursive(const TEPAPA_Results& rr, const vector<unsigned int>& v, const vector<bool>& neg, const binary_profile& bprof, unsigned int limit, unsigned int delta) {
+  if (v.size() >= limit) return false;
+  if (delta >= rr.size()) return false;
+
+  vector<unsigned int> v1 = v;
+  vector<bool> neg1 = neg;
+  
+  v1.push_back(delta);
+  neg1.push_back(false);
+
+  
+  two_class_stats tcs;
+  tcs.compute(v_score, bprof);
+
+  //  tcs.print("efghabcdjJl"); printf(" ---- \n");
+  
+  for(unsigned int i=delta; i<rr.size(); ++i) {
+    v1[ v1.size() - 1 ] = i;
+    neg1[ v1.size() - 1 ] = false;
+
+    // if new pattern is a complete subset of any of previous pattern, there is no point to add it in
+    bool f_skip_intersection = false;
+    for(unsigned int j=0; j<v.size(); ++j) {
+      if ( rr[ v[j] ].bprof.contains(rr[i].bprof) ) {
+	 f_skip_intersection = true;
+	break;
+      }
+    }
+   
+    if (! f_skip_intersection) {
+    
+      binary_profile  bprof1 = bprof;
+      bprof1 &= rr[i].bprof;
+        
+      two_class_stats tcs1;
+      tcs1.compute(v_score, bprof1);    
+      
+      if ( tcs1.lrp() > tcs.lrp() ) { // v1 is a pattern with higher likelihood ratio than v
+	/* tcs1.print("efghabcdjJl");  printf("\t"); for (unsigned int i=0; i<v.size(); ++i) printf(" %d", v[i]);  printf("\t%s", rr[i].patt->to_string().c_str()); */       
+	if (v1.size() > 1) do_evaluate( mk_meta_pattern(ght("AND"), rr, v1, neg1) ); 
 	
-	return 1;
-	}
+	if ( (v1.size() < limit) && (tcs1.fp>0) ) gen_MPL_AND_recursive(rr, v1, neg1, bprof1, limit, i+1);
+      } 
+    }
+
+    /*
+    // Try negation.
+
+    if ( v1.size() > 1 ) {
+      binary_profile  bprof1 = bprof;
+      bprof1 &= ( ! rr[i].bprof );
+      neg1[ v1.size() - 1 ] = true;
+      tcs1.compute(v_score, bprof1);    
+      
+      if ( tcs1.lrp() > tcs.lrp() ) { // v1 is a pattern with higher likelihood ratio than v
+	// tcs1.print("efghabcdjJl");  printf("\t"); for (unsigned int i=0; i<v.size(); ++i) printf(" %d", v[i]);  printf("\t%s", rr[i].patt->to_string().c_str()); 
+	if (v1.size() > 1) do_evaluate( mk_meta_pattern(ght("AND"), rr, v1, neg1) ); 
+	
+	if ( (v1.size() < limit) && (tcs1.fp>0) ) gen_MPL_AND_recursive(rr, v1, neg1, bprof1, limit, i+1);
+	} 
+	}*/
+
+  }
+  return true;
+}
+
+
+
+
+bool TEPAPA_Discoverer_MetaPattern::gen_MPL_FOLLOW_recursive(const sample_list& sl, const TEPAPA_Results& rr, const vector<unsigned int>& v, const vector<size_t>& sli, const binary_profile& bprof, unsigned int limit) {
+  if (v.size() >= limit) return false;
+
+  vector<unsigned int> v1 = v;
+  v1.push_back(0);
+
+  two_class_stats tcs, tcs1;
+  tcs.compute(v_score, bprof);
+  
+  for(unsigned int i=0; i<rr.size(); ++i) {
+    v1[ v1.size() - 1 ] = i;
+    
+    binary_profile  bprof1 = bprof;
+    bprof1 &= rr[i].bprof;
+    
+    tcs1.compute(v_score, bprof1);
+    if ( tcs1.tp <= 1 ) continue;
+
+    vector<size_t> sli1 = sli;
+    assert(sl.size() == sli.size());
+
+    for(unsigned int j=0; j<bprof1.size(); ++j) {
+      if (! bprof1[j]) continue;
+      
+      pattern* ppi = rr[i].patt ;
+      matchable_pattern* mp1 = dynamic_cast<matchable_pattern*>(ppi);
+      if (! mp1) {
+	bprof1[j] = false;
+	continue;
+      }
+
+      matched_pos m = mp1->find( sl[j].data, matching_range(sl[j].data, sl[j].data.begin() + sli[j]) );
+      
+      if ( m.first == sl[j].data.end() ) bprof1[j] = false;
+      
+      sli1[j] = m.second - sl[j].data.begin();
+    }
+
+    tcs1.compute(v_score, bprof1);
+    if ( tcs1.tp <= 1 ) continue;
+    
+    if ( tcs1.lrp() > tcs.lrp() ) { // v1 is a pattern with higher likelihood ratio than v
+      /*  tcs1.print("efghabcdjJl");  printf("\t"); for (unsigned int i=0; i<v.size(); ++i) printf(" %d", v[i]);  printf("\t%s", rr[i].patt->to_string().c_str()); */       
+      if (v1.size() > 1) do_evaluate( mk_meta_pattern(ght("FOLLOW"), rr, v1) );
+      
+      if ( (v1.size() < limit) && (tcs1.fp>0) ) gen_MPL_FOLLOW_recursive(sl, rr, v1, sli1, bprof1, limit);
+    }
+  }
+  return true;
+}
+
+
+
+
+
+bool TEPAPA_Discoverer_MetaPattern::run1_meta(const sample_list& sl, const TEPAPA_Results& rr_input) {	
+  TEPAPA_Results  rr = rr_input;
+
+  binary_profile bprof( v_score.size() ) ;
+  bprof = true;
+  
+  vector<unsigned int> v;
+  vector<bool> v_neg;
+  
+  gen_MPL_AND_recursive(rr, v, v_neg, bprof, depth, 0);
+
+  vector<size_t> sli( bprof.size() );  for(unsigned int i=0; i<sli.size(); ++i) sli[i]=0;
+  
+  //  gen_MPL_FOLLOW_recursive(sl, rr, v, sli, bprof, depth);
+
+  
+  return true;
+}

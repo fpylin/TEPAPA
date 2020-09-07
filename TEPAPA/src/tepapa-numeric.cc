@@ -95,7 +95,7 @@ void TEPAPA_Discoverer_Numeric::run1(int i) {
 	
 	TEPAPA_Evaluator& e = *evaluator;
 	
-	sample_list& sl = *sl_ptr;
+	const sample_list& sl = *sl_ptr;
 	
 	const token_string& s = sl[i].data;
 

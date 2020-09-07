@@ -175,7 +175,7 @@ bool TEPAPA_Discoverer_Regex::eval_regex(iptr<TEPAPA_Evaluator>& e, const sample
 	if ( (nprpi > 1)  ) {
 		iptr<pattern> pp = new regex(r);
 		
-		e -> eval_symbolic( bp, v_score, pp, ppval );
+		e -> eval_symbolic( bp, outvar_vectors_t(v_score, v_censored), pp, ppval );
 		
 		++total_cnt_cls;
 		}
@@ -199,7 +199,7 @@ bool TEPAPA_Discoverer_Regex::eval_regex(iptr<TEPAPA_Evaluator>& e, const sample
 	if ( (nprpi > 1)  ) {
 		iptr<pattern> pp = new regex(r);
 		
-		e -> eval_symbolic( bp, v_score, pp, ppval );
+		e -> eval_symbolic( bp, outvar_vectors_t(v_score, v_censored), pp, ppval );
 		
 		++total_cnt_cls;
 		}
@@ -264,7 +264,7 @@ void TEPAPA_Discoverer_Regex::recursive_reduce_exhaustive(iptr<TEPAPA_Evaluator>
 
 regex TEPAPA_Discoverer_Regex::recursive_reduce_greedy(const sample_list& sl, regex& r0) {
 
-	iptr<TEPAPA_Evaluator> e = new TEPAPA_Evaluator( sl.is_outvar_binary() ) ;
+	iptr<TEPAPA_Evaluator> e = new TEPAPA_Evaluator( sl ) ;
 	
 	binary_profile search_mask(sl.size());
 	search_mask = true;

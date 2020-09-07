@@ -41,12 +41,15 @@ extern set<hash_value> separators;
 
 
 class TEPAPA_Discoverer_Symbolic: public TEPAPA_Discoverer {
-	int traverse_ngrams_and_classes(TEPAPA_Evaluator& e, const token_string& ref, token_string::const_iterator start, int n) ;
-	int traverse_ngrams_and_classes(TEPAPA_Evaluator& e, const token_string& ref, token_string::const_iterator start, int n, const ngram_pattern& stack, const binary_profile& search_mask);
+	int traverse_ngrams_and_classes(TEPAPA_Evaluator& e, const token_string& ref, token_string::const_iterator ref_start, token_string::const_iterator ref_end, int n) ;
+	int traverse_ngrams_and_classes(TEPAPA_Evaluator& e, const token_string& ref, token_string::const_iterator start, token_string::const_iterator ref_end, int n, const ngram_pattern& stack, const binary_profile& search_mask, bool f_subset, const binary_profile& init_search_mask);
 
 	bool f_deep_cmp;
 	bool f_use_wildcard;
 	int  ngram ;
+	
+	matching_range_list  substr_mask; // Optional; for partial document matching
+	binary_profile       init_search_mask; 
 
 	protected:
 	virtual void run1(int i) ;
@@ -60,7 +63,14 @@ class TEPAPA_Discoverer_Symbolic: public TEPAPA_Discoverer {
 		}
 
 	virtual ~TEPAPA_Discoverer_Symbolic() {}
-// 	virtual bool run() ;
+	
+	void set_substr_mask(const matching_range_list& p_substr_mask) {
+	  // for partial document matching
+	  substr_mask = p_substr_mask;
+	}
+	void set_init_search_mask(const binary_profile& p_init_search_mask) {
+	  init_search_mask = p_init_search_mask;	  
+	}
 	};
 
 

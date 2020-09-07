@@ -59,22 +59,21 @@ bool sample::save(FILE* fout) const {
 
 
 sample_list::sample_list() : vector<sample>(){ 
-	outvar_type = SAMPLE_LIST_OUTVAR_AUTO;
+	outvar_type = OUTVAR_TYPE_AUTO;
 	}
 
 sample_list::sample_list(const sample_list& sl): vector<sample>(sl) {
-	outvar_type = SAMPLE_LIST_OUTVAR_AUTO;
+        outvar_type = sl.outvar_type;
 	}
 
 	
-sample_list::sample_list(const string& filename, sample::datatype pdtype)
+sample_list::sample_list(const string& filename, int pdtype)
 	: vector<sample>() {
-	outvar_type = SAMPLE_LIST_OUTVAR_AUTO;
 	load(filename, pdtype);
 	}
 
 
-bool sample_list::load(const string& filename, sample::datatype pdtype) {
+bool sample_list::load(const string& filename, int pdtype) {
 	char buf[4096];
 	FILE* fin = fopen(filename.c_str() ,"rt");
 	
@@ -83,24 +82,38 @@ bool sample_list::load(const string& filename, sample::datatype pdtype) {
 		}
 	
 	clear();
+	outvar_type = pdtype;
 	
 	while( fgets(buf, sizeof(buf), fin) ) {
 		char* x = buf;
 		double d = 0;
 		
-		sample s(pdtype);
+		sample s;
+		s.censored = false;
 
 		char symb[65536];
 		switch(pdtype) {
-			case sample::numeric_t:
+			case OUTVAR_TYPE_NUMERIC:
+			case OUTVAR_TYPE_SURVIVAL:
+				switch(*x) {
+					case '>':
+						s.censored=true;
+					case '=':
+						++x;
+					pdtype = outvar_type = OUTVAR_TYPE_SURVIVAL; // survival analysis
+				};
+				// NO BREAK HERE! directly followed by parsing the numerical survival
 				if ( ! ( x = parse_double(x, d) ) ) continue;
+				// msgf(VL_INFO, "SURVIVAL\t%d\n", s.censored);
 				s.score = d;
 				break;
-			case sample::symbolic_t:
+				
+			case OUTVAR_TYPE_SYMBOLIC:
 				if ( ! ( x = parse_capture_until_char(x, '\t', symb) ) ) continue;
 				s.symbol = ght( symb );
 				break;
-			case sample::symbol_list_t:
+				
+			case OUTVAR_TYPE_SYMBOLIC_LIST:
 				s.symbol_list.clear();
 				while(x) {
 					if ( ! strchr(x+1, '\t') ) break;
@@ -122,15 +135,18 @@ bool sample_list::load(const string& filename, sample::datatype pdtype) {
 		push_back(s);
 		
 		switch (pdtype) {
-			case sample::numeric_t: 
+			case OUTVAR_TYPE_NUMERIC: 
 				msgf(VL_DEBUG, "%f\t%lu\t%s\n", d, s.definitions[0], filename);
 				break;
-			case sample::symbolic_t: 
+			case OUTVAR_TYPE_SYMBOLIC: 
 				msgf(VL_DEBUG, "%s\t%lu\t%s\n", ght[ s.symbol ], s.definitions[0], filename);
 				break;
-			case sample::symbol_list_t:
+			case OUTVAR_TYPE_SYMBOLIC_LIST:
 				for(unsigned int z=0; z<s.symbol_list.size(); ++z)  msgf(VL_DEBUG, "%s\t", ght[ s.symbol_list[z] ]);
 				msgf(VL_DEBUG, "%lu\t%s\n", s.definitions[0], filename);
+				break;
+			case OUTVAR_TYPE_SURVIVAL: 
+				msgf(VL_DEBUG, "%s%f\t%lu\t%s\n", (s.censored ? ">" : "="), d, s.definitions[0], filename);
 				break;
 			default:;
 			};
@@ -160,6 +176,7 @@ bool sample_list::load_charstrings(const string& filename) {
 		if ( (y = strchr(x, '\r') ) ) *y = 0;
 		
 		sample s;
+		s.censored = false;
 		s.score = d;
 		s.sample_order = size();
 		s.load_charstring( x );
@@ -169,8 +186,6 @@ bool sample_list::load_charstrings(const string& filename) {
 	
 	fclose(fin);
 
-	index_token_registry();
-	
 	return 1;
 	}
 
@@ -179,10 +194,16 @@ bool sample_list::save(const string& filename) {
 	FILE* fout = fopen( filename.c_str(), "wt");
 	
 	if ( !fout ) msgf(VL_FATAL, "Unable to write to %s", filename.c_str() );
+	msgf(VL_INFO, "Outvar type = %d", (uint) outvar_type );
 	
 	for(iterator it=begin(); it!=end(); ++it) {
-		fprintf(fout, "%f\t%s\n", it->score, ght[ it->definitions[0] ] );
-		}
+	  if ( outvar_type == OUTVAR_TYPE_SURVIVAL ) {
+	    fprintf(fout, "%s%f\t%s\n", (it->censored ? ">":"="), it->score, ght[ it->definitions[0] ] );
+	  }
+	  else {
+	    fprintf(fout, "%f\t%s\n", it->score, ght[ it->definitions[0] ] );
+	  }
+	}
 	
 	fclose(fout);
 	
@@ -344,25 +365,40 @@ bool sample_list::summarise(map<hash_value, double>& OUT_statistics) const {
 
 	
 bool sample_list::is_outvar_binary()  const { 
-	assert (outvar_type != SAMPLE_LIST_OUTVAR_AUTO);
-	return (outvar_type == SAMPLE_LIST_OUTVAR_BINARY);
+	assert (outvar_type != OUTVAR_TYPE_AUTO);
+	return (outvar_type == OUTVAR_TYPE_BINARY);
 	}
 
 bool sample_list::is_outvar_numeric() const { 
-	assert (outvar_type != SAMPLE_LIST_OUTVAR_AUTO);
-	return (outvar_type == SAMPLE_LIST_OUTVAR_NUMERIC); 
+	assert (outvar_type != OUTVAR_TYPE_AUTO);
+	return (outvar_type == OUTVAR_TYPE_NUMERIC); 
 	}
 
+bool sample_list::is_outvar_survival() const { 
+	assert (outvar_type != OUTVAR_TYPE_AUTO);
+	return (outvar_type == OUTVAR_TYPE_SURVIVAL); 
+	}
+
+
 void sample_list::guess_outvar_type() {
-	if (outvar_type != SAMPLE_LIST_OUTVAR_AUTO) return ; // already set
+  //	if (outvar_type != OUTVAR_TYPE_AUTO) return ; // already set
 	vector<double> lvls = get_levels( get_scores() );
+	vector<bool> lvls_c = get_levels( get_censored() );
+
+	msgf(VL_INFO, "Levels: Scores=%d, Censored=%d\n", lvls.size(), lvls_c.size());
+
+	
 	if ( lvls.size() == 2 ) {
-		msgf(VL_INFO, "Sample is BINARY\n");
-		outvar_type = SAMPLE_LIST_OUTVAR_BINARY;
+		msgf(VL_INFO, "Outcome variable type is BINARY\n");
+		outvar_type = OUTVAR_TYPE_BINARY;
 		}
-	else {
-		msgf(VL_INFO, "Sample is NUMERIC\n");
-		outvar_type = SAMPLE_LIST_OUTVAR_NUMERIC;
+	else if ( lvls_c.size() == 2 ){
+		msgf(VL_INFO, "Outcome variable type is SURVIVAL\n");
+		outvar_type = OUTVAR_TYPE_SURVIVAL;
+		}
+        else  {
+		msgf(VL_INFO, "Outcome variable type is NUMERIC\n");
+		outvar_type = OUTVAR_TYPE_NUMERIC;
 		}
 	}
 
@@ -373,6 +409,17 @@ vector<double>  sample_list::get_scores() const {
 		}
 	return retval;
 	}
+
+vector<bool> sample_list::get_censored() const {
+	unsigned int i=0;
+	vector<bool> retval( size() );
+	for(const_iterator it=begin(); it!=end(); ++i, ++it) {
+		retval[i] = it->censored;
+		}
+	return retval;
+	}
+
+
 
 void sample_list::reorder(const vector<int>& o) {
 	size_t  sz = o.size();
