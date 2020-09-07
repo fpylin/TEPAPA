@@ -16,15 +16,15 @@ TARGETDIR=../bin
 ALL_CC=$(wildcard *.cc)
 OBJS=$(patsubst %.cc,%.o,$(ALL_CC) )
 ARCH=-m64
-OPTFLAG=-Wall -O3
+OPTFLAG=-Wall -O3 -g
 LDFLAGS=$(OPTFLAG) $(ARCH)
-LIBS= -lgslcblas -lgsl -lm -lpthread $(shell perl -MExtUtils::Embed -e ldopts) -L . -l tepapa 
+LIBS= -lgslcblas -lgsl -lm -L . -l tepapa -lpthread $(shell perl -MExtUtils::Embed -e ldopts) 
 CXXFLAGS=$(ARCH) $(shell perl -MExtUtils::Embed -e ccopts) -std=c++11
 
 ##########################################################################################
 
 all: .dep libtepapa.a $(TARGETS)
-	strip $(TARGETS)
+#	strip $(TARGETS)
 	cp -av $(TARGETS) $(TARGETDIR)
 
 include .dep
@@ -48,8 +48,8 @@ libtepapa.a: $(OBJS)
 
 eperl.o: eperl.cc  eperl.h  strfriends.h
 	@printf "  \e[1;32m[O]\e[0m %-20s" $@
-	g++ $(CXXFLAGS) -c -o $@ $< 
-	
+	g++ $(CXXFLAGS) -c -o $@ $<
+
 %.o: %.cc
 	@printf "  \e[1;32m[O]\e[0m %-20s" $@
 	g++ $(OPTFLAG) $(CXXFLAGS) -c -o $@ $<
