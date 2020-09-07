@@ -6,24 +6,24 @@
           A Text mining-based  Exploratory Pattern Analyser
            for Prognostic and Associative factor discovery
 
-                            (Version 0.9)
+                 (Version 0.99 - 7 September 2020)	    
 
 
-      Frank Lin *, MB ChB PhD <f dot lin at garvan dot org dot au>
 
+Frank Lin, MB ChB, PhD, FRACP
 
-* Department of Medical Oncology, St Vincent's Hospital, Sydney & 
-  The Kinghorn Cancer Centre
-  Darlinghurst, NSW 2010, Australia
+  *  Kinghorn Centre for Clinical Genomics, Garvan Institute of Medical
+     Research, Darlinghurst, NSW 2010, Australia
 
-* Garvan Institute of Medical Research, Darlinghurst, NSW 2010, Australia
+Previous affiliation:
+
+  *  Department of Medical Oncology, St Vincent's Hospital, Sydney & 
+     The Kinghorn Cancer Centre, Darlinghurst, NSW 2010, Australia
 
 
 
 =============================================================================
-Copyright (C) 2015-2016, Frank Lin - All Rights Reserved
-
-Written by Frank P.Y. Lin <f dot lin at garvan dot org dot au>
+Copyright (C) 2015-2020, Frank Lin - All Rights Reserved
 
 This file is part of TEPAPA, a Text mining-based Exploratory Pattern Analyser
 for Prognostic and Associative factor discovery.
@@ -42,6 +42,18 @@ TEPAPA.  If not, see <http://www.gnu.org/licenses/>
 =============================================================================
 
 
+RELEASE HISTORY
+
+Version 0.99  - 7 September, 2020
+  * Added survival analysis (logrank)
+  * Added option to specify minimum support required (-s) in exhaustive search
+  * Bug fixes
+
+Version 0.9   - 29 July, 2017
+  * Initial release
+
+
+
 1. Overview
 ===========
 
@@ -49,7 +61,7 @@ TEPAPA  is a  feature  learning  pipeline  that  learns  differentiating  text
 patterns associated with outcomes of interest (i.e. supervised) from examples.
 It is  specifically designed  to learn  new knowledge  from electronic medical
 records (EMR) to find text patterns associated a numeric  and binary variables
-of interest (and hopefully explanatory with biological plausibility!).
+of interest (and hopefully explanatory with biological plausibility).
 
 TEPAPA combines the following methods  to discover text patterns that differen-
 tiate the outcome variables from EMR text:
@@ -68,7 +80,7 @@ replaced by dedicated  and/or more sophiscated tools for preprocessing.  TEPAPA
 may also find discriminative text patterns to help machine learning-based pheno-
 typing methods for case classification.
   
-Please see the associated publications for detailed discussions [1].
+Please see the associated publications for more detailed descriptions [1].
 
 
 2. Building TEPAPA
@@ -130,22 +142,33 @@ To run TEPAPA, you need:
 
 
 
-References:
+Related publications:
 
 1.  Lin F,  Pokorny A,  Teng C,  Epstein RJ.  TEPAPA: a novel  in silico  feature 
     learning  pipeline for  mining prognostic and associative factors  from text-
-    based electronic medical records (Under review).
+    based electronic medical records. Sci Rep. 2017 Jul 31;7(1):6918
+    https://www.nature.com/articles/s41598-017-07111-0.
 
-2.  Lin F  and  Epstein RJ.  An  associative  text-mining  pipeline   rediscovers
+2.  Lin F, Jameson MB, and Epstein RJ. Predicting survival in advanced cancers by
+    applying machine learning to clinical narratives. J Glob Oncol 2019; 5 suppl:
+    32. DOI: 10.1200/JGO.2019.5.suppl.32. (Abstract presented at ASCO Breakthrough 
+
+3.  Lin F, Salih OSM, and Epstein RJ. Exploratory Analysis of Clinical Prognostic
+    Factors in Patients with  Advanced Cancer  Using Computational Text Mining of
+    Routine Digitised Oncology Correspondence. Abstract Int Med J 2018 48(S5): 8.
+    Abstracts for the RACP Congress 2018, Disruption for Healthy Futures, 14-16
+    May 2018, International Convention Centre, Sydney. DOI: 10.1111/imj.7_13826
+
+4.  Lin F  and  Epstein RJ.  An  associative  text-mining  pipeline   rediscovers
     clinicopathologic  factors  correlated  to  adjuvant  chemotherapy recommend-
     ations from a structured, uncleaned breast cancer database. Presented  at the
     Sydney  Bioinformatics  Research  Symposium 2016,  Charles  Perkins  Centre,
     University of Sydney. July 2016
     
-3.  Lin F and and Epstein RJ. Rapid in silico identification of cancer prognostic
+5.  Lin F and and Epstein RJ. Rapid in silico identification of cancer prognostic
     factors  from the electronic medical records:  a case study  of upper gastro-
     intestinal (UGI)  cancers  multidisciplinary (MDT) meeting reports  (Poster).
     Presented  at the  Sydney Cancer Conference,  22--23 September 2016.
 
 
-Last updated: 2 November 2016
+Last updated: 7 September 2020
