@@ -24,10 +24,11 @@
 #include "utils.h"
 #include "strfriends.h"
 #include "tepapa-utils.h"
-#include "eperl.h"
 #include "pipe.h"
 #include <stdlib.h>
 #include <unistd.h>
+#include <algorithm>
+#include <cctype>
 
 
 TEPAPA_Program_MLPRedict::TEPAPA_Program_MLPRedict()
@@ -52,9 +53,16 @@ bool TEPAPA_Program_MLPRedict::handle_argv(const vector<string>& argv) {
 	
 	msgf(VL_INFO, "prog_path=%s\n", prog_path.c_str());
 
-	EmbeddedPerl  eperl(true);
+	string prog_dir ; 
 	
-	string prog_dir = eperl.simple_replacement(prog_path, "(.*)/.*", "$1");
+	std::size_t last_slash_pos;
+	
+	if ( (last_slash_pos = prog_path.rfind("/")) != std::string::npos ) {
+		prog_dir = prog_path.substr(0, last_slash_pos);
+	} else {
+		prog_dir = ".";
+	}
+	
 	
 	msgf(VL_INFO, "prog_dir=%s\n", prog_dir.c_str());
 
@@ -64,7 +72,8 @@ bool TEPAPA_Program_MLPRedict::handle_argv(const vector<string>& argv) {
 		string s = argv[i];
 		string s_lc = strtolower(s);
 		string s_uc = strtoupper(s);
-		string sname = eperl.simple_replacement(s_lc, "[[:punct:]]+", "");
+		string sname;
+		std::remove_copy_if (s_lc.begin (), s_lc.end (), sname.begin(), [](unsigned char c) { return !ispunct(c); } );
 		
 		mlcmd_struct  mcs; 
 		

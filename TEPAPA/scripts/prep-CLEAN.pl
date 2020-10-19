@@ -25,6 +25,6 @@ for (@lines) {
 	s/(\.) ([A-Z])/$1\n$2/g;
 	}
 	
-my $data = join ('', map { "$_\n" } @lines);
+my $data = join ('', map { "<BOS>  $_  <EOS>  \n" } @lines);
 
 print $data;

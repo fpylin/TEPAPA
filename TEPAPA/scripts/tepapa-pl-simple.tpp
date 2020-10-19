@@ -109,7 +109,7 @@
 # @Preprocess -i $Input -o /tmp/tepapa-pl-preprocessed.txt CLEAN TOKENISE 
 
 # Uncomment this line to use case-insensitive tokens instead:
-@Preprocess -i $Input -o /tmp/tepapa-pl-preprocessed.txt CLEAN ANNOTATE-LC TOKENISE 
+@Preprocess -i $Input -o /tmp/tepapa-pl-preprocessed.txt CLEAN ANNOTATE-LC TOKENISE
 
 # Uncomment this line to use character-based discovery (instead of word-based)
 # @Preprocess -i $Input -o /tmp/tepapa-pl-preprocessed.txt CLEAN EXPLODE
@@ -119,7 +119,7 @@
 
 #### Pattern search and PatWAS #########################################################
 # Generating primary patterns (n-grams) by exhaustive n-gram search (maximum n = 10)
-@DiscoverSymbolic  -n 10                -O rt_symbolic
+@DiscoverSymbolic  -n 10 -s 5           -O rt_symbolic
 
 # Uncomment this line to generate primary patterns (n-grams) by exhaustive n-gram search 
 # (maximum n = 10) with combinatorial search (this will enable word stemming).
@@ -141,6 +141,7 @@
 #   positive and negative patterns
 
 # Comment out the following two lines to disable regular expression use.
+@SigSelect               -D regextest   -a $Siglevel
 @GroupFeatures -f d      -D regextest 
 @DiscoverRegex -g        -D regextest   -O retval -A 
 
@@ -153,3 +154,4 @@
 #### Sorting and printing feature by $SortOrder ###########################################
 @Rank                    -D retval      -f $SortOrder
 @Print                   -D retval 
+@PrintTwoClassStats      -D retval

@@ -39,6 +39,7 @@ sub process_part {
 	$x =~ s/([\d]+)x([\d]+)x([\d]+)\b/$1 x $2 x $3/g;
 	$x =~ s/([\d]+)x([\d]+)\b/$1 x $2/g;
 	$x =~ s/\b(>|<|>=|<=)([0-9])\b/$1 $2/g;
+	$x =~ s/([0-9])%/$1 %/g;
 	
 	$x =~ s/([\("])(\S+)/$1 $2/g;
 	$x =~ s/(\S+)([\)"])/$1 $2/g;
@@ -69,7 +70,17 @@ sub annotate_token($) {
 	my $token = $_[0];
 	my @annotations;
 
-	for ($token) { 
+	for ($token) {
+		if ( /^(.*)_([A-Z]+)$/ ) { # pos tagging 
+			my ($token1, $pos) = ($1, $2);
+			push @annotations, $token1;
+			push @annotations, "<POS:$pos>"; 
+			$token = $token1;
+			}
+		else {
+			push @annotations, $token;
+			}
+		
 		/^[[:punct:]]+$/ 
 			and do { push @annotations, "<PUNCT/>"; };
 		/^[\+\-]?[0-9]+(?:\.[0-9]+)?$/ 
@@ -78,14 +89,14 @@ sub annotate_token($) {
 			and do { push @annotations, "<ORDINAL/>"; };
 		/^$month_regex$/ 
 			and do { push @annotations, "<MONTH/>"; };
-		/^[0-9]{4}$/ and ($_ >= 1700) and ( $_ <= 2050 ) 
+		/^[0-9]{4}$/ and ($token >= 1700) and ( $token <= 2050 ) 
 			and do { push @annotations, "<YEAR/>"; };
-		exists( $numeric_words{$_} ) 
-			and do do { push @annotations, $numeric_words{$_}, "<NUMBER/>"; };
+		exists( $numeric_words{$token} ) 
+			and do do { push @annotations, $numeric_words{$token}, "<NUMBER/>"; };
 		/^[\+\-]?[0-9]+(?:\.[0-9]+)?%$/ 
 			and do { push @annotations, "<PERCENTAGE/>"};
 # 		/^[A-Za-z]+$/ and do { push @annotations, "<WORD>"; };
-		/^[A-Za-z]+$/ and do { push @annotations, stem_word($_); };
+		/^[A-Za-z]+$/ and do { push @annotations, stem_word($token); };
 		}
 
 	return @annotations;
@@ -175,7 +186,8 @@ for my $line (@lines) {
 			for my $token (@tokens) {
 # 				print STDERR "\t>> TOKEN: $token <<\n";
 				next if $token =~ /^\s*$/;
-				$output .= join("\t", $token, annotate_token($token))."\n";
+# 				$output .= join("\t", $token, annotate_token($token))."\n";
+				$output .= join("\t", annotate_token($token))."\n";
 # 				$output .= join("\t", $token)."\n";
 				}
 			}

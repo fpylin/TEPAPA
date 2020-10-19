@@ -52,7 +52,7 @@
 #include "tepapa-meta.h"
 #include "tepapa-stats.h"
 #include "tepapa-reduce.h"
-#include "tepapa-tag.h"
+// #include "tepapa-tag.h"
 #include "tepapa-gseq.h"
 
 #include "predicate-pattern.h"
@@ -139,7 +139,7 @@ bool initialise(TEPAPA_global_data_struct& gvr) {
 	programs.insert( new TEPAPA_Program_Discoverer_MetaPattern );
 	programs.insert( new TEPAPA_Program_Statistic );
 	programs.insert( new TEPAPA_Program_UnlinkFile );
-	programs.insert( new TEPAPA_Program_TagFile );
+// 	programs.insert( new TEPAPA_Program_TagFile );
 	programs.insert( new TEPAPA_Program_Discoverer_Gapped_Sequence);
 
 	return true;

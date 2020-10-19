@@ -24,9 +24,10 @@
 #include "tepapa-utils.h"
 #include "utils.h"
 #include "strfriends.h"
-#include "eperl.h"
-
 #include <string>
+#include <algorithm>
+#include <cctype>
+#include <ctype.h>
 
 using namespace std;
 #include <vector>
@@ -123,17 +124,25 @@ TEPAPA_Program_Preprocess::TEPAPA_Program_Preprocess()
 bool TEPAPA_Program_Preprocess::handle_argv(const vector<string>& argv) {
 	msgf(VL_INFO, "prog_path=%s\n", prog_path.c_str());
 	
-	EmbeddedPerl  eperl(true);
-
-	string prog_dir = eperl.simple_replacement(prog_path, "(.*)/.*", "$1");
+	string prog_dir ; 
 	
+	std::size_t last_slash_pos;
+	
+	if ( (last_slash_pos = prog_path.rfind("/")) != std::string::npos ) {
+		prog_dir = prog_path.substr(0, last_slash_pos);
+	} else {
+		prog_dir = ".";
+	}
+
 	msgf(VL_INFO, "prog_dir=%s\n", prog_dir.c_str());
 
 	for(unsigned int i=0; i<argv.size(); ++i) {
 		string s = argv[i];
 		string s_lc = strtolower(s);
 		string s_uc = strtoupper(s);
-		string sname = eperl.simple_replacement(s_lc, "[[:punct:]]+", "");
+		string sname;
+		std::remove_copy_if (s_lc.begin (), s_lc.end (), sname.begin(), [](unsigned char c) { return !ispunct(c); } );
+		
 		string sdname = string("post-") + sname ;
 		
 		string cmdfn = find_executable(
@@ -168,14 +177,17 @@ bool TEPAPA_Program_Preprocess::handle_argv(const vector<string>& argv) {
 int TEPAPA_Program_Preprocess::run(TEPAPA_dataset&  ds_input, TEPAPA_Results&  rr_output) {
 	// SYNTAX: @Preprocess [-o output case] case [CLEAN|ANNOTATE] TOKENISE ...
 	
-	EmbeddedPerl  eperl(true);
-	
 	if ( ! path_case_raw.length() )  {
 		msgf(VL_FATAL, "No case definition source file specified.");
 		}
 	
 	if ( ! path_case_processed.length() )  {
-		path_case_processed = eperl.simple_replacement("(\\.txt)$", path_case_raw, "-preped$1");
+		path_case_processed = path_case_raw; 
+		if ( size_t path_case_raw_suffix_pos = path_case_processed.rfind(".txt") ) {
+			path_case_processed.substr(0, path_case_raw_suffix_pos);
+			path_case_processed += "-preped.txt";
+		}
+
 		if (path_case_processed == path_case_raw) {
 			msgf(VL_FATAL, "Output filenames are identical. Please specify -i and -o options.");
 			}
